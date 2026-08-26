@@ -3,9 +3,9 @@ using Microsoft.Extensions.Hosting;
 using SASD.Bewerbungsmanager.Application;
 using SASD.Bewerbungsmanager.Infrastructure;
 using SASD.Bewerbungsmanager.Infrastructure.Persistence;
-using SASD.Bewerbungsmanager.WinForms.Forms;
 using SASD.Bewerbungsmanager.WinForms.Presentation;
 using WinFormsApplication = System.Windows.Forms.Application;
+using MilestoneMainForm = SASD.Bewerbungsmanager.WinForms.Forms.MainForm;
 
 namespace SASD.Bewerbungsmanager.WinForms;
 
@@ -19,8 +19,7 @@ internal static class Program
         var builder = Host.CreateApplicationBuilder(args);
         builder.Services.AddApplicationServices();
         builder.Services.AddTrackerInfrastructure(builder.Configuration);
-        builder.Services.AddSingleton<UiExceptionPresenter>();
-        builder.Services.AddSingleton<MainForm>();
+        builder.Services.AddWinFormsPresentation();
 
         using var host = builder.Build();
 
@@ -35,7 +34,11 @@ internal static class Program
                 .GetResult();
 
             InstallGlobalExceptionHandling(host.Services.GetRequiredService<UiExceptionPresenter>());
-            WinFormsApplication.Run(host.Services.GetRequiredService<MainForm>());
+
+            // There is still a legacy M0 MainForm in the root WinForms namespace. Use an explicit
+            // alias here so namespace lookup can never silently start that obsolete shell instead
+            // of the Milestone-1 form in the Forms namespace.
+            WinFormsApplication.Run(host.Services.GetRequiredService<MilestoneMainForm>());
         }
         finally
         {
