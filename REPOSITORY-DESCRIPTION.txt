@@ -1,0 +1,1 @@
+Local-first Windows-Desktopanwendung zur Verwaltung von Stellen, Bewerbungen, Unternehmen, Kontakten, Interviews, Aufgaben, Dokumentversionen, Zusagen und Follow-ups. Entwickelt mit C#, .NET 10, WinForms und SQLite nach dem SASD Development Standard.

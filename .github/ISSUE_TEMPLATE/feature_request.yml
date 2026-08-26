@@ -1,0 +1,24 @@
+name: Feature / Änderung
+description: Fachlich begründete Änderung vorschlagen
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Nutzen
+      description: Welches reale Problem soll gelöst werden?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Gewünschter Scope
+      description: In Scope / Out of Scope und relevante REQ/PFL, falls bekannt.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Akzeptanzkriterien
+      description: Woran ist objektiv erkennbar, dass die Änderung fertig ist?

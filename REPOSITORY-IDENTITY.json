@@ -1,0 +1,13 @@
+{
+  "name": "SASD-Bewerbungsmanager",
+  "product_name": "SASD Bewerbungsmanager",
+  "repository_url": "https://github.com/Robin-Goerlach/SASD-Bewerbungsmanager",
+  "primary_language": "C#",
+  "ui": "Windows Forms",
+  "target_framework": "net10.0-windows",
+  "runtime_baseline": ".NET 10 LTS",
+  "database": "SQLite / EF Core 10",
+  "status": "M0 repository scaffold",
+  "documentation_language": "de",
+  "license_status": "undecided"
+}

@@ -1,0 +1,30 @@
+name: Fehlerbericht
+description: Reproduzierbares Fehlverhalten melden
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Beschreibung
+      description: Was ist passiert und was wurde erwartet?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduktion
+      description: Konkrete Schritte und Testdaten ohne personenbezogene Daten.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / Commit
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Daten- oder Sicherheitswirkung
+      description: Datenverlust, falsche Historie, Datenschutz, Backup/Restore oder keine bekannte Wirkung?
