@@ -1,33 +1,35 @@
 # Changelog
 
-Alle wesentlichen Änderungen am SASD Bewerbungsmanager werden in diesem Dokument erfasst. Das Projekt verwendet nach dem ersten Release eine SemVer-orientierte Versionsführung.
+## 0.0.1-hotfix4 - 2026-08-26
 
-## [Unreleased]
+- Fixed `CS8754` in `ApplicationEditForm.ToUtc` by using an explicit `DateTimeOffset` construction before calling `ToUniversalTime()`.
+- Removed obsolete High-DPI declarations from `app.manifest` to resolve WinForms analyzer `WFO0003`.
+- Added `ApplicationHighDpiMode=PerMonitorV2` to the WinForms project; `ApplicationConfiguration.Initialize()` applies it at startup.
+- Performed a complete static scan of WinForms and the downstream presentation/system test sources for the currently visible compiler/analyzer patterns.
 
-### Added
-
-- Referenzprodukt- und Funktionsanalyse.
-- Lastenheft für Version 1.0.
-- Pflichtenheft für Windows Forms / .NET 10.
-- Zielarchitektur für Version 1.0.
-- Roadmap M0 bis 1.0.0.
-- Projektklassifikation, Risiko-, Security-, Test-, Deployment- und Wartungsbaseline.
-- UI-Konzept einschließlich Dashboard-Konzeptbild.
-- Entwicklungs- und Quality-Gate-Plan.
-
-### Changed
-
-- Noch keine Produktcodeänderungen; Implementierung hat nicht begonnen.
+## Milestone 1 Hotfix - 2026-08-26
 
 ### Fixed
 
-- Noch keine Produktdefekte.
+- Updated .NET/EF Core servicing packages to 10.0.11.
+- Pinned patched SQLitePCLRaw 2.1.13 transitive dependencies so NuGet audit no longer selects the vulnerable 2.1.11 native SQLite package.
+- Pinned `System.Security.Cryptography.Xml` 10.0.11 for the EF design-time/MSBuild dependency graph instead of suppressing `NU1903`.
+- Resolved the `Application` namespace/type collision in the application layer with the explicit `JobApplication` alias.
+- Replaced the collection-existence assertion in `ArchitectureTests` with `Assert.DoesNotContain`, satisfying xUnit2012.
 
-### Security
+## Milestone 1 – 2026-08-26
 
-- Local-first und „keine versteckten Netzaufrufe“ als V1-Architekturregel festgelegt.
-- Backup/Restore und unveränderliche Dokumentversionen als Release-relevante Integritätsfunktionen festgelegt.
+### Added
 
-## [0.0.0-doc-baseline] – 2026-08-24
+- Domain model for Organization, Contact, Opportunity, SourceLink and Application.
+- Persisted application status history.
+- SQLite/EF Core persistence and initial migration.
+- Generic Host and dependency injection composition root.
+- WinForms navigation, dashboard baseline and CRUD workflows.
+- Domain, application, infrastructure, presentation and system tests.
+- LocalApplicationData storage policy and repository ignore rules.
+## Hotfix 2 – 2026-08-26
 
-Erste konsolidierte Dokumentationsbaseline vor Repository-Scaffold.
+- Resolved remaining `Application` namespace/type collisions in the Infrastructure layer and SQLite integration test by using the explicit `JobApplication` alias.
+- Renamed the Infrastructure DI registration class and extension method to `InfrastructureServiceCollectionExtensions.AddTrackerInfrastructure` so stale source files from an overlay cannot cause a duplicate `DependencyInjection` type.
+- Updated the WinForms startup registration accordingly.

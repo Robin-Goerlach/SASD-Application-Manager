@@ -4,8 +4,8 @@
     <RootNamespace>SASD.Bewerbungsmanager.Application</RootNamespace>
     <AssemblyName>SASD.Bewerbungsmanager.Application</AssemblyName>
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\SASD.Bewerbungsmanager.Domain\SASD.Bewerbungsmanager.Domain.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
   </ItemGroup>
 </Project>

@@ -1,43 +1,19 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace SASD.Bewerbungsmanager.Infrastructure.Persistence;
 
-/// <summary>
-/// Applies versioned database migrations and records the initial schema baseline.
-/// </summary>
-public sealed class DatabaseInitializer
+/// <summary>Applies pending EF Core migrations before the main form starts using the local database.</summary>
+public sealed class DatabaseInitializer(
+    IDbContextFactory<ApplicationTrackerDbContext> contextFactory,
+    ILogger<DatabaseInitializer> logger)
 {
-    private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
-
-    /// <summary>
-    /// Initializes a new database initializer.
-    /// </summary>
-    /// <param name="contextFactory">Short-lived context factory.</param>
-    public DatabaseInitializer(IDbContextFactory<ApplicationDbContext> contextFactory)
+    /// <summary>Creates or migrates the database to the schema expected by this application build.</summary>
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
-    }
-
-    /// <summary>
-    /// Initializes or upgrades the local database before the WinForms message loop starts.
-    /// </summary>
-    public void Initialize()
-    {
-        using var dbContext = _contextFactory.CreateDbContext();
-        dbContext.Database.Migrate();
-
-        const string baselineKey = "SchemaBaseline";
-        if (dbContext.SystemMetadata.Any(item => item.Key == baselineKey))
-        {
-            return;
-        }
-
-        dbContext.SystemMetadata.Add(new SystemMetadataRecord
-        {
-            Key = baselineKey,
-            Value = "M0",
-            UpdatedAtUtc = DateTime.UtcNow,
-        });
-        dbContext.SaveChanges();
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Applying database migrations.");
+        await context.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Database migrations completed.");
     }
 }

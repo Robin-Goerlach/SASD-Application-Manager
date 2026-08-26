@@ -1,16 +1,40 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!--
+      Security-relevant transitive dependencies are pinned centrally as well.
+      This keeps NuGet audit warnings useful: we update vulnerable packages instead
+      of suppressing NU190x warnings while TreatWarningsAsErrors is enabled.
+    -->
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.11" />
-    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />
+
+    <!--
+      EF Core's SQLite provider and its tooling pull these packages transitively.
+      Versions <= 2.1.11 of SQLitePCLRaw.lib.e_sqlite3 contain a vulnerable SQLite
+      build. 2.1.13 is the current compatible 2.1.x servicing release.
+    -->
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.13" />
+    <PackageVersion Include="SQLitePCLRaw.core" Version="2.1.13" />
+    <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.13" />
+    <PackageVersion Include="SQLitePCLRaw.provider.e_sqlite3" Version="2.1.13" />
+
+    <!--
+      Microsoft.Build.Tasks.Core is a transitive dependency of EF design-time tooling.
+      Older dependency graphs select System.Security.Cryptography.Xml 9.0.0, which is
+      affected by several 2026 advisories. Pin the patched .NET 10 servicing version.
+    -->
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.11" />
+
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
   </ItemGroup>
 </Project>

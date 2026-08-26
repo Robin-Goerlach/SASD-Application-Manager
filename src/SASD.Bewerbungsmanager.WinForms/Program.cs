@@ -1,10 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using SASD.Bewerbungsmanager.Infrastructure.DependencyInjection;
+using SASD.Bewerbungsmanager.Application;
+using SASD.Bewerbungsmanager.Infrastructure;
 using SASD.Bewerbungsmanager.Infrastructure.Persistence;
-using SASD.Bewerbungsmanager.WinForms.Bootstrap;
-using SASD.Bewerbungsmanager.WinForms.Presentation.MainShell;
+using SASD.Bewerbungsmanager.WinForms.Forms;
+using SASD.Bewerbungsmanager.WinForms.Presentation;
+using WinFormsApplication = System.Windows.Forms.Application;
 
 namespace SASD.Bewerbungsmanager.WinForms;
 
@@ -13,58 +14,45 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
-        using var singleInstance = SingleInstanceGuard.TryAcquire();
-        if (!singleInstance.IsPrimaryInstance)
-        {
-            MessageBox.Show(
-                "Der SASD Bewerbungsmanager läuft bereits.",
-                "SASD Bewerbungsmanager",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
-            return;
-        }
-
         ApplicationConfiguration.Initialize();
 
         var builder = Host.CreateApplicationBuilder(args);
-        builder.Logging.ClearProviders();
-        builder.Logging.AddDebug();
-
-        builder.Services.AddBewerbungsmanagerInfrastructure();
-        builder.Services.AddSingleton<MainShellPresenter>();
+        builder.Services.AddApplicationServices();
+        builder.Services.AddTrackerInfrastructure(builder.Configuration);
+        builder.Services.AddSingleton<UiExceptionPresenter>();
         builder.Services.AddSingleton<MainForm>();
 
         using var host = builder.Build();
+
+        // Keep initialization on the original STA thread. There is no WinForms synchronization
+        // context before Application.Run, so an async Main could resume on an MTA thread.
         host.Start();
-
-        var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Application");
-        Application.ThreadException += (_, eventArgs) =>
-            logger.LogCritical(eventArgs.Exception, "Unhandled WinForms thread exception.");
-        TaskScheduler.UnobservedTaskException += (_, eventArgs) =>
-        {
-            logger.LogError(eventArgs.Exception, "Unobserved task exception.");
-            eventArgs.SetObserved();
-        };
-        AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
-            logger.LogCritical(eventArgs.ExceptionObject as Exception, "Unhandled process exception.");
-
         try
         {
-            host.Services.GetRequiredService<DatabaseInitializer>().Initialize();
-            Application.Run(host.Services.GetRequiredService<MainForm>());
-        }
-        catch (Exception exception)
-        {
-            logger.LogCritical(exception, "Application startup or message loop failed.");
-            MessageBox.Show(
-                "Die Anwendung konnte nicht sicher gestartet oder ausgeführt werden und wurde beendet.",
-                "SASD Bewerbungsmanager",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
+            host.Services.GetRequiredService<DatabaseInitializer>()
+                .InitializeAsync()
+                .GetAwaiter()
+                .GetResult();
+
+            InstallGlobalExceptionHandling(host.Services.GetRequiredService<UiExceptionPresenter>());
+            WinFormsApplication.Run(host.Services.GetRequiredService<MainForm>());
         }
         finally
         {
             host.StopAsync().GetAwaiter().GetResult();
         }
+    }
+
+    private static void InstallGlobalExceptionHandling(UiExceptionPresenter presenter)
+    {
+        WinFormsApplication.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+        WinFormsApplication.ThreadException += (_, args) => presenter.Show(args.Exception);
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception exception)
+            {
+                presenter.Show(exception);
+            }
+        };
     }
 }
