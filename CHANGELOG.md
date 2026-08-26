@@ -1,5 +1,11 @@
 # Changelog
 
+## Hotfix 9 - Runtime diagnostics (2026-08-26)
+
+- UI exceptions now persist their full stack trace to `%LOCALAPPDATA%\SASD GmbH\SASD Bewerbungsmanager\Logs\application.log`.
+- The error dialog now shows the base exception type and message so runtime-only failures can be diagnosed without guessing.
+- Diagnostic file writing is best-effort and never masks the original application exception.
+
 ## Milestone 1 - Hotfix 7 (2026-08-26)
 
 - Fixed EF Core tracking for newly appended `ApplicationStatusHistory` entries by configuring
@@ -52,3 +58,10 @@
 - Resolved remaining `Application` namespace/type collisions in the Infrastructure layer and SQLite integration test by using the explicit `JobApplication` alias.
 - Renamed the Infrastructure DI registration class and extension method to `InfrastructureServiceCollectionExtensions.AddTrackerInfrastructure` so stale source files from an overlay cannot cause a duplicate `DependencyInjection` type.
 - Updated the WinForms startup registration accordingly.
+
+## Milestone 1 - Hotfix 8 (2026-08-26)
+
+- Fixed the startup/dashboard failure caused by server-side SQLite ordering on `DateTimeOffset`.
+- Moved ordering for opportunities, source links and applications to in-memory sorting after the
+  rows have been materialized, matching the documented EF Core SQLite provider limitation.
+- Added regression coverage for all affected list methods and for the dashboard startup path.

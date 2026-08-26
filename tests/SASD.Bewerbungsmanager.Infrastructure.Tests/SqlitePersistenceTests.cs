@@ -72,4 +72,114 @@ public sealed class SqlitePersistenceTests
         Assert.Contains(loaded.StatusHistory, item => item.Note == "Testversand");
         Assert.Contains(loaded.StatusHistory, item => item.Note == "Testinterview");
     }
+
+    [Fact]
+    public async Task ListMethods_OrderDateTimeOffsetValuesInMemoryForSqlite()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<ApplicationTrackerDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using (var setup = new ApplicationTrackerDbContext(options))
+        {
+            await setup.Database.MigrateAsync();
+        }
+
+        var older = new DateTimeOffset(2026, 8, 25, 10, 0, 0, TimeSpan.Zero);
+        var newer = new DateTimeOffset(2026, 8, 26, 10, 0, 0, TimeSpan.Zero);
+
+        var olderOpportunity = new Opportunity
+        {
+            Id = Guid.NewGuid(),
+            Title = "Older opportunity",
+            DescriptionSnapshot = "Synthetic older opportunity.",
+            Status = OpportunityStatus.Identified,
+            FoundAtUtc = older,
+            CreatedAtUtc = older,
+            UpdatedAtUtc = older,
+        };
+        var newerOpportunity = new Opportunity
+        {
+            Id = Guid.NewGuid(),
+            Title = "Newer opportunity",
+            DescriptionSnapshot = "Synthetic newer opportunity.",
+            Status = OpportunityStatus.Identified,
+            FoundAtUtc = newer,
+            CreatedAtUtc = newer,
+            UpdatedAtUtc = newer,
+        };
+
+        var olderApplication = new JobApplication
+        {
+            Id = Guid.NewGuid(),
+            OpportunityId = olderOpportunity.Id,
+            StartedAtUtc = older,
+            Channel = ApplicationChannel.Email,
+            CreatedAtUtc = older,
+            UpdatedAtUtc = older,
+        };
+        olderApplication.InitializeStage(ApplicationStage.Draft, older);
+
+        var newerApplication = new JobApplication
+        {
+            Id = Guid.NewGuid(),
+            OpportunityId = newerOpportunity.Id,
+            StartedAtUtc = newer,
+            Channel = ApplicationChannel.Email,
+            CreatedAtUtc = newer,
+            UpdatedAtUtc = newer,
+        };
+        newerApplication.InitializeStage(ApplicationStage.Draft, newer);
+
+        var olderSource = new SourceLink
+        {
+            Id = Guid.NewGuid(),
+            OpportunityId = newerOpportunity.Id,
+            Source = "Example Source",
+            Url = "https://example.invalid/older",
+            CapturedAtUtc = older,
+        };
+        var newerSource = new SourceLink
+        {
+            Id = Guid.NewGuid(),
+            OpportunityId = newerOpportunity.Id,
+            Source = "Example Source",
+            Url = "https://example.invalid/newer",
+            CapturedAtUtc = newer,
+        };
+
+        await using (var write = new ApplicationTrackerDbContext(options))
+        {
+            write.Opportunities.AddRange(olderOpportunity, newerOpportunity);
+            write.Applications.AddRange(olderApplication, newerApplication);
+            write.SourceLinks.AddRange(olderSource, newerSource);
+            await write.SaveChangesAsync();
+        }
+
+        var store = new TrackerDataStore(new TestDbContextFactory(options));
+        var opportunities = await store.ListOpportunitiesAsync();
+        var applications = await store.ListApplicationsAsync();
+        var sources = await store.ListSourceLinksAsync(newerOpportunity.Id);
+
+        Assert.Equal(
+            new[] { newerOpportunity.Id, olderOpportunity.Id },
+            opportunities.Select(item => item.Id));
+        Assert.Equal(
+            new[] { newerApplication.Id, olderApplication.Id },
+            applications.Select(item => item.Id));
+        Assert.Equal(
+            new[] { newerSource.Id, olderSource.Id },
+            sources.Select(item => item.Id));
+    }
+
+    private sealed class TestDbContextFactory(DbContextOptions<ApplicationTrackerDbContext> options)
+        : IDbContextFactory<ApplicationTrackerDbContext>
+    {
+        public ApplicationTrackerDbContext CreateDbContext() => new(options);
+
+        public Task<ApplicationTrackerDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(CreateDbContext());
+    }
 }

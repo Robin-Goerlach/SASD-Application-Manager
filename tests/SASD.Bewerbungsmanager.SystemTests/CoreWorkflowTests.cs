@@ -50,6 +50,16 @@ public sealed class CoreWorkflowTests
                 "65–70 k€"));
 
             await applications.ChangeStageAsync(application.Id, ApplicationStage.Submitted, "Unterlagen versendet");
+
+            // Regression for the real WinForms startup path: DashboardService immediately loads
+            // and orders opportunities/applications. SQLite cannot order DateTimeOffset in SQL,
+            // so this call used to throw as soon as the dashboard became visible.
+            var dashboard = new DashboardService(store);
+            var summary = await dashboard.GetSummaryAsync();
+
+            Assert.Equal(1, summary.ActiveOpportunities);
+            Assert.Equal(1, summary.Applications);
+
             var persisted = await store.GetApplicationAsync(application.Id);
 
             Assert.NotNull(persisted);

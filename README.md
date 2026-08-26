@@ -102,3 +102,12 @@ C#-Namenskonflikt zwischen dem Projekt-Namespace `SASD.Bewerbungsmanager.Applica
 und der Domain-Entität `Application`. NuGet-Sicherheitswarnungen werden bewusst nicht
 unterdrückt.
 
+## Runtime-Diagnose
+
+Bei unerwarteten UI-/Laufzeitfehlern schreibt die Anwendung den vollständigen Stacktrace lokal nach:
+
+```text
+%LOCALAPPDATA%\SASD GmbH\SASD Bewerbungsmanager\Logs\application.log
+```
+
+Die Logdatei liegt bewusst außerhalb des Repositorys. Fehlermeldungen zeigen zusätzlich Exception-Typ und technische Kurzmeldung an, damit Laufzeitprobleme reproduzierbar diagnostiziert werden können.

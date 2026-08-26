@@ -92,11 +92,17 @@ public sealed class TrackerDataStore(IDbContextFactory<ApplicationTrackerDbConte
     public async Task<IReadOnlyList<Opportunity>> ListOpportunitiesAsync(CancellationToken cancellationToken = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        return await context.Opportunities.AsNoTracking()
-            .OrderByDescending(item => item.FoundAtUtc)
-            .ThenBy(item => item.Title)
+        var items = await context.Opportunities.AsNoTracking()
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        // SQLite can persist DateTimeOffset values, but it cannot translate ordering/comparison
+        // on DateTimeOffset to SQL. Sort after materialization so the desktop app keeps the
+        // domain-friendly DateTimeOffset model without provider-specific query failures.
+        return items
+            .OrderByDescending(item => item.FoundAtUtc)
+            .ThenBy(item => item.Title)
+            .ToList();
     }
 
     /// <inheritdoc />
@@ -128,11 +134,16 @@ public sealed class TrackerDataStore(IDbContextFactory<ApplicationTrackerDbConte
     public async Task<IReadOnlyList<SourceLink>> ListSourceLinksAsync(Guid opportunityId, CancellationToken cancellationToken = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        return await context.SourceLinks.AsNoTracking()
+        var items = await context.SourceLinks.AsNoTracking()
             .Where(item => item.OpportunityId == opportunityId)
-            .OrderByDescending(item => item.CapturedAtUtc)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        // See ListOpportunitiesAsync: DateTimeOffset ordering must be performed client-side
+        // when Microsoft.EntityFrameworkCore.Sqlite is the provider.
+        return items
+            .OrderByDescending(item => item.CapturedAtUtc)
+            .ToList();
     }
 
     /// <inheritdoc />
@@ -148,11 +159,17 @@ public sealed class TrackerDataStore(IDbContextFactory<ApplicationTrackerDbConte
     public async Task<IReadOnlyList<JobApplication>> ListApplicationsAsync(CancellationToken cancellationToken = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        return await context.Applications.AsNoTracking()
+        var items = await context.Applications.AsNoTracking()
             .Include("_statusHistory")
-            .OrderByDescending(item => item.StartedAtUtc)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        // SQLite does not support server-side ordering by DateTimeOffset. The expected data
+        // volume of a personal job-search tracker is small, so deterministic client-side sorting
+        // is preferable to changing the domain time model solely for this provider limitation.
+        return items
+            .OrderByDescending(item => item.StartedAtUtc)
+            .ToList();
     }
 
     /// <inheritdoc />
