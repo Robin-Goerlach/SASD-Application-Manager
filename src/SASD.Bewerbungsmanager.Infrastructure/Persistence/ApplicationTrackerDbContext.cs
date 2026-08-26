@@ -146,6 +146,13 @@ public sealed class ApplicationTrackerDbContext(DbContextOptions<ApplicationTrac
         var entity = modelBuilder.Entity<ApplicationStatusHistory>();
         entity.ToTable("application_status_history");
         entity.HasKey(item => item.Id);
+
+        // Status-history identifiers are created by the domain with Guid.NewGuid(). Explicitly
+        // disable value generation so EF Core treats a history item appended to an already
+        // tracked application as a new row even though its Guid key is already populated.
+        // Without this, a generated-key convention can classify the dependent as existing and
+        // issue an UPDATE that affects zero rows, resulting in DbUpdateConcurrencyException.
+        entity.Property(item => item.Id).ValueGeneratedNever();
         entity.Property(item => item.Stage).HasConversion<string>().HasMaxLength(50).IsRequired();
         entity.Property(item => item.Note).HasMaxLength(2000);
         entity.HasIndex(item => new { item.ApplicationId, item.ChangedAtUtc });

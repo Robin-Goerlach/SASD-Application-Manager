@@ -1,5 +1,24 @@
 # Changelog
 
+## Milestone 1 - Hotfix 7 (2026-08-26)
+
+- Fixed EF Core tracking for newly appended `ApplicationStatusHistory` entries by configuring
+  their application-generated Guid primary keys with `ValueGeneratedNever()`.
+- Added an infrastructure regression test that persists an application, reloads it, changes its
+  stage, and verifies that the second history entry is inserted instead of updated.
+
+## Hotfix 5 - 2026-08-26
+
+## Hotfix 6 - 2026-08-26
+
+- Fixed the final system-test cleanup failure on Windows.
+- Disabled SQLite connection pooling for the temporary file-based `CoreWorkflowTests` database so disposed DbContexts release the database file before cleanup.
+- Kept cleanup strict: file deletion errors are not hidden by retries or swallowed exceptions.
+
+- Replaced a stale `ApplicationPathsTests.cs` left from an earlier repository state with a system test for the current `AppDataPath.GetDefaultDatabasePath()` API.
+- Removed xUnit2009 patterns by asserting the expected database path directly.
+
+
 ## 0.0.1-hotfix4 - 2026-08-26
 
 - Fixed `CS8754` in `ApplicationEditForm.ToUtc` by using an explicit `DateTimeOffset` construction before calling `ToUniversalTime()`.

@@ -123,7 +123,7 @@ partial class ApplicationTrackerModelSnapshot : ModelSnapshot
         {
             entity.ToTable("application_status_history");
             entity.HasKey(item => item.Id);
-            entity.Property(item => item.Id).HasColumnType("TEXT");
+            entity.Property(item => item.Id).HasColumnType("TEXT").ValueGeneratedNever();
             entity.Property(item => item.ApplicationId).HasColumnType("TEXT");
             entity.Property(item => item.Stage).HasColumnType("TEXT").HasMaxLength(50).HasConversion<string>().IsRequired();
             entity.Property(item => item.ChangedAtUtc).HasColumnType("TEXT");

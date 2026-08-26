@@ -81,7 +81,18 @@ public sealed class CoreWorkflowTests
     private sealed class TestDbContextFactory(string databasePath) : IDbContextFactory<ApplicationTrackerDbContext>
     {
         public ApplicationTrackerDbContext CreateDbContext()
-            => new(new DbContextOptionsBuilder<ApplicationTrackerDbContext>().UseSqlite($"Data Source={databasePath}").Options);
+        {
+            // Microsoft.Data.Sqlite enables connection pooling by default. For this file-based
+            // system test we deliberately disable pooling so disposing the DbContext also closes
+            // the underlying file handle immediately. Otherwise Windows can still see the
+            // temporary database as in use when the test cleanup deletes it.
+            var connectionString = $"Data Source={databasePath};Pooling=False;Foreign Keys=True";
+            var options = new DbContextOptionsBuilder<ApplicationTrackerDbContext>()
+                .UseSqlite(connectionString)
+                .Options;
+
+            return new ApplicationTrackerDbContext(options);
+        }
 
         public Task<ApplicationTrackerDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(CreateDbContext());
