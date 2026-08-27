@@ -1,25 +1,36 @@
 using SASD.Bewerbungsmanager.Application.Services;
-using SASD.Bewerbungsmanager.Domain.Entities;
 using SASD.Bewerbungsmanager.WinForms.Forms;
 using SASD.Bewerbungsmanager.WinForms.Presentation;
 using JobApplication = SASD.Bewerbungsmanager.Domain.Entities.Application;
 
 namespace SASD.Bewerbungsmanager.WinForms.Controls;
 
-/// <summary>Lists concrete applications and exposes the first status-history workflow.</summary>
+/// <summary>
+/// Lists concrete applications and exposes status history, immutable document assignment, and the
+/// manual "context for ChatGPT" handoff without embedding any generative AI in the application.
+/// </summary>
 public sealed class ApplicationsControl : UserControl
 {
     private readonly ApplicationService _service;
     private readonly OpportunityService _opportunities;
+    private readonly DocumentService _documents;
+    private readonly ApplicationContextService _context;
     private readonly UiExceptionPresenter _errors;
     private readonly DataGridView _grid = ControlFactory.DataGrid();
     private IReadOnlyList<JobApplication> _items = [];
 
     /// <summary>Initializes the applications view.</summary>
-    public ApplicationsControl(ApplicationService service, OpportunityService opportunities, UiExceptionPresenter errors)
+    public ApplicationsControl(
+        ApplicationService service,
+        OpportunityService opportunities,
+        DocumentService documents,
+        ApplicationContextService context,
+        UiExceptionPresenter errors)
     {
         _service = service;
         _opportunities = opportunities;
+        _documents = documents;
+        _context = context;
         _errors = errors;
         BuildLayout();
         Load += async (_, _) => await RefreshAsync();
@@ -27,10 +38,19 @@ public sealed class ApplicationsControl : UserControl
 
     private void BuildLayout()
     {
-        var toolbar = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = new Padding(0, 0, 0, 8) };
+        var toolbar = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            Padding = new Padding(0, 0, 0, 8),
+            WrapContents = true,
+        };
         toolbar.Controls.Add(ControlFactory.ToolbarButton("Neue Bewerbung", async (_, _) => await CreateAsync()));
         toolbar.Controls.Add(ControlFactory.ToolbarButton("Status ändern", async (_, _) => await ChangeStageAsync()));
         toolbar.Controls.Add(ControlFactory.ToolbarButton("Historie", (_, _) => ShowHistory()));
+        toolbar.Controls.Add(ControlFactory.ToolbarButton("Dokument zuordnen", async (_, _) => await AttachDocumentAsync()));
+        toolbar.Controls.Add(ControlFactory.ToolbarButton("Verwendete Dokumente", async (_, _) => await ShowDocumentsAsync()));
+        toolbar.Controls.Add(ControlFactory.ToolbarButton("Kontext für ChatGPT kopieren", async (_, _) => await CopyContextAsync()));
         toolbar.Controls.Add(ControlFactory.ToolbarButton("Aktualisieren", async (_, _) => await RefreshAsync()));
         Controls.Add(_grid);
         Controls.Add(toolbar);
@@ -74,6 +94,7 @@ public sealed class ApplicationsControl : UserControl
             {
                 return;
             }
+
             await _service.CreateAsync(dialog.Input);
             await RefreshAsync();
         }
@@ -90,11 +111,13 @@ public sealed class ApplicationsControl : UserControl
         {
             return;
         }
+
         using var dialog = new ApplicationStageForm(selected.Stage);
         if (dialog.ShowDialog(this) != DialogResult.OK)
         {
             return;
         }
+
         try
         {
             await _service.ChangeStageAsync(selected.Id, dialog.Stage, dialog.Note);
@@ -113,8 +136,85 @@ public sealed class ApplicationsControl : UserControl
         {
             return;
         }
+
         using var dialog = new ApplicationHistoryForm(selected);
         dialog.ShowDialog(this);
+    }
+
+    private async Task AttachDocumentAsync()
+    {
+        var selected = SelectedItem();
+        if (selected is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var documents = await _documents.ListAsync();
+            using var dialog = new ApplicationDocumentAttachForm(documents);
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+            {
+                return;
+            }
+
+            await _documents.AttachToApplicationAsync(selected.Id, dialog.SelectedDocumentId);
+            MessageBox.Show(
+                this,
+                "Die konkrete Dokumentversion wurde geprüft und als unveränderlicher Snapshot der Bewerbung zugeordnet.",
+                "SASD Bewerbungsmanager",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            _errors.Show(ex, this);
+        }
+    }
+
+    private async Task ShowDocumentsAsync()
+    {
+        var selected = SelectedItem();
+        if (selected is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var snapshots = await _documents.ListApplicationSnapshotsAsync(selected.Id);
+            using var dialog = new ApplicationDocumentsForm(snapshots);
+            dialog.ShowDialog(this);
+        }
+        catch (Exception ex)
+        {
+            _errors.Show(ex, this);
+        }
+    }
+
+    private async Task CopyContextAsync()
+    {
+        var selected = SelectedItem();
+        if (selected is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var text = await _context.BuildAsync(selected.Id);
+            Clipboard.SetText(text);
+            MessageBox.Show(
+                this,
+                "Der Bewerbungskontext wurde in die Zwischenablage kopiert.",
+                "SASD Bewerbungsmanager",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            _errors.Show(ex, this);
+        }
     }
 
     private JobApplication? SelectedItem()
@@ -123,6 +223,7 @@ public sealed class ApplicationsControl : UserControl
         {
             return _items.SingleOrDefault(item => item.Id == id);
         }
+
         return null;
     }
 }

@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.0 – Operational MVP (2026-08-26)
+
+### Added
+
+- Added `Activity` timeline entries and planned appointments, including interviews and authority appointments.
+- Added explicit `ACTION` / `WAITING_FOR` operational work items with optional due dates.
+- Turned the Today page into an operational cockpit for overdue actions, current actions, waiting states, appointments and due search checks.
+- Added manual `SearchProfile` routines with browser opening and "Heute geprüft" scheduling.
+- Added a document-version catalog with SHA-256 fingerprints.
+- Added immutable per-application document snapshots copied below LocalApplicationData after hash re-verification.
+- Added deterministic "Kontext für ChatGPT kopieren" clipboard handoff without embedding generative AI.
+- Added EF Core migration `202608260002_OperationalMvp`.
+- Added/expanded domain, application, SQLite integration, presentation, system and composition-root regression tests for the new operational paths.
+
+### Changed
+
+- Expanded navigation to Today, Tasks, Appointments, Timeline, Search Sources, Applications, Opportunities, Contacts, Organizations and Documents.
+- Registered all operational WinForms views explicitly in DI so `ValidateOnBuild` can detect missing constructor dependencies.
+- Preserved SQLite `DateTimeOffset` compatibility by materializing before date ordering/filtering where provider translation is not reliable.
+
 ## Hotfix 9 - Runtime diagnostics (2026-08-26)
 
 - UI exceptions now persist their full stack trace to `%LOCALAPPDATA%\SASD GmbH\SASD Bewerbungsmanager\Logs\application.log`.

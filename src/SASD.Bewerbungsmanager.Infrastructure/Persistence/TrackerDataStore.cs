@@ -1,14 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using SASD.Bewerbungsmanager.Application.Abstractions;
 using SASD.Bewerbungsmanager.Domain.Entities;
-using JobApplication = SASD.Bewerbungsmanager.Domain.Entities.Application;
 using SASD.Bewerbungsmanager.Domain.Enums;
+using JobApplication = SASD.Bewerbungsmanager.Domain.Entities.Application;
+using TrackerActivity = SASD.Bewerbungsmanager.Domain.Entities.Activity;
+using TrackerDocument = SASD.Bewerbungsmanager.Domain.Entities.Document;
 
 namespace SASD.Bewerbungsmanager.Infrastructure.Persistence;
 
 /// <summary>
-/// EF Core implementation of the early persistence port. Every operation creates and disposes a
-/// short-lived DbContext; no context is shared with WinForms controls or across threads.
+/// EF Core implementation of the pragmatic persistence port. Every operation obtains a short-lived
+/// DbContext from the factory, so no context crosses UI operations or threads.
 /// </summary>
 public sealed class TrackerDataStore(IDbContextFactory<ApplicationTrackerDbContext> contextFactory) : ITrackerDataStore
 {
@@ -96,9 +98,9 @@ public sealed class TrackerDataStore(IDbContextFactory<ApplicationTrackerDbConte
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        // SQLite can persist DateTimeOffset values, but it cannot translate ordering/comparison
-        // on DateTimeOffset to SQL. Sort after materialization so the desktop app keeps the
-        // domain-friendly DateTimeOffset model without provider-specific query failures.
+        // Microsoft.EntityFrameworkCore.Sqlite can persist DateTimeOffset but cannot translate
+        // ordering/comparison for it. The personal dataset is small, so deterministic in-memory
+        // ordering is preferable to leaking provider-specific timestamp types into the domain.
         return items
             .OrderByDescending(item => item.FoundAtUtc)
             .ThenBy(item => item.Title)
@@ -139,11 +141,7 @@ public sealed class TrackerDataStore(IDbContextFactory<ApplicationTrackerDbConte
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        // See ListOpportunitiesAsync: DateTimeOffset ordering must be performed client-side
-        // when Microsoft.EntityFrameworkCore.Sqlite is the provider.
-        return items
-            .OrderByDescending(item => item.CapturedAtUtc)
-            .ToList();
+        return items.OrderByDescending(item => item.CapturedAtUtc).ToList();
     }
 
     /// <inheritdoc />
@@ -164,12 +162,7 @@ public sealed class TrackerDataStore(IDbContextFactory<ApplicationTrackerDbConte
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        // SQLite does not support server-side ordering by DateTimeOffset. The expected data
-        // volume of a personal job-search tracker is small, so deterministic client-side sorting
-        // is preferable to changing the domain time model solely for this provider limitation.
-        return items
-            .OrderByDescending(item => item.StartedAtUtc)
-            .ToList();
+        return items.OrderByDescending(item => item.StartedAtUtc).ToList();
     }
 
     /// <inheritdoc />
@@ -206,9 +199,187 @@ public sealed class TrackerDataStore(IDbContextFactory<ApplicationTrackerDbConte
             .ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Die Bewerbung wurde nicht gefunden.");
 
-        // Updating the aggregate and its history inside one DbContext/SaveChanges keeps the current
-        // stage and audit trail transactionally consistent.
+        // Current stage and audit history are committed in one SaveChanges operation.
         application.ChangeStage(stage, changedAtUtc, note);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TrackerActivity>> ListActivitiesAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var items = await context.Activities.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
+        return items
+            .OrderByDescending(item => item.OccurredAtUtc ?? item.ScheduledAtUtc ?? item.CreatedAtUtc)
+            .ThenBy(item => item.Subject)
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<TrackerActivity?> GetActivityAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        return await context.Activities.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task AddActivityAsync(TrackerActivity activity, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(activity);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.Activities.Add(activity);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateActivityAsync(TrackerActivity activity, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(activity);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.Activities.Update(activity);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TrackerTask>> ListTasksAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var items = await context.Tasks.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
+        return items
+            .OrderBy(item => item.Status)
+            .ThenBy(item => item.DueAtUtc ?? DateTimeOffset.MaxValue)
+            .ThenBy(item => item.Title)
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<TrackerTask?> GetTaskAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        return await context.Tasks.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task AddTaskAsync(TrackerTask task, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(task);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.Tasks.Add(task);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateTaskAsync(TrackerTask task, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(task);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.Tasks.Update(task);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<SearchProfile>> ListSearchProfilesAsync(bool includeInactive, CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var query = context.SearchProfiles.AsNoTracking();
+        if (!includeInactive)
+        {
+            query = query.Where(item => item.IsActive);
+        }
+
+        var items = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+        return items.OrderBy(item => item.NextCheckAtUtc).ThenBy(item => item.Name).ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<SearchProfile?> GetSearchProfileAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        return await context.SearchProfiles.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task AddSearchProfileAsync(SearchProfile profile, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.SearchProfiles.Add(profile);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateSearchProfileAsync(SearchProfile profile, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.SearchProfiles.Update(profile);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TrackerDocument>> ListDocumentsAsync(bool includeArchived, CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var query = context.Documents.AsNoTracking();
+        if (!includeArchived)
+        {
+            query = query.Where(item => !item.IsArchived);
+        }
+
+        return await query
+            .OrderBy(item => item.Type)
+            .ThenBy(item => item.Label)
+            .ThenByDescending(item => item.Version)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<TrackerDocument?> GetDocumentAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        return await context.Documents.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task AddDocumentAsync(TrackerDocument document, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.Documents.Add(document);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateDocumentAsync(TrackerDocument document, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.Documents.Update(document);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ApplicationDocumentSnapshot>> ListApplicationDocumentSnapshotsAsync(
+        Guid applicationId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var items = await context.ApplicationDocumentSnapshots.AsNoTracking()
+            .Where(item => item.ApplicationId == applicationId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return items.OrderBy(item => item.CapturedAtUtc).ThenBy(item => item.Type).ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task AddApplicationDocumentSnapshotAsync(
+        ApplicationDocumentSnapshot snapshot,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.ApplicationDocumentSnapshots.Add(snapshot);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }

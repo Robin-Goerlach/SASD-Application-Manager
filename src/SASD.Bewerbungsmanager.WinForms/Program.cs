@@ -5,7 +5,7 @@ using SASD.Bewerbungsmanager.Infrastructure;
 using SASD.Bewerbungsmanager.Infrastructure.Persistence;
 using SASD.Bewerbungsmanager.WinForms.Presentation;
 using WinFormsApplication = System.Windows.Forms.Application;
-using MilestoneMainForm = SASD.Bewerbungsmanager.WinForms.Forms.MainForm;
+using OperationalMainForm = SASD.Bewerbungsmanager.WinForms.Forms.MainForm;
 
 namespace SASD.Bewerbungsmanager.WinForms;
 
@@ -35,10 +35,10 @@ internal static class Program
 
             InstallGlobalExceptionHandling(host.Services.GetRequiredService<UiExceptionPresenter>());
 
-            // There is still a legacy M0 MainForm in the root WinForms namespace. Use an explicit
-            // alias here so namespace lookup can never silently start that obsolete shell instead
-            // of the Milestone-1 form in the Forms namespace.
-            WinFormsApplication.Run(host.Services.GetRequiredService<MilestoneMainForm>());
+            // Always resolve the operational form by its explicit alias. Older repository overlays may still
+            // contain the pre-Milestone-1 MainForm in the root namespace; the alias prevents that
+            // obsolete shell from ever winning C# namespace lookup again.
+            WinFormsApplication.Run(host.Services.GetRequiredService<OperationalMainForm>());
         }
         finally
         {

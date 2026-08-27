@@ -32,4 +32,27 @@ public interface ITrackerDataStore
     Task<JobApplication?> GetApplicationAsync(Guid id, CancellationToken cancellationToken = default);
     Task AddApplicationAsync(JobApplication application, CancellationToken cancellationToken = default);
     Task ChangeApplicationStageAsync(Guid applicationId, ApplicationStage stage, DateTimeOffset changedAtUtc, string? note, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Activity>> ListActivitiesAsync(CancellationToken cancellationToken = default);
+    Task<Activity?> GetActivityAsync(Guid id, CancellationToken cancellationToken = default);
+    Task AddActivityAsync(Activity activity, CancellationToken cancellationToken = default);
+    Task UpdateActivityAsync(Activity activity, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<TrackerTask>> ListTasksAsync(CancellationToken cancellationToken = default);
+    Task<TrackerTask?> GetTaskAsync(Guid id, CancellationToken cancellationToken = default);
+    Task AddTaskAsync(TrackerTask task, CancellationToken cancellationToken = default);
+    Task UpdateTaskAsync(TrackerTask task, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<SearchProfile>> ListSearchProfilesAsync(bool includeInactive, CancellationToken cancellationToken = default);
+    Task<SearchProfile?> GetSearchProfileAsync(Guid id, CancellationToken cancellationToken = default);
+    Task AddSearchProfileAsync(SearchProfile profile, CancellationToken cancellationToken = default);
+    Task UpdateSearchProfileAsync(SearchProfile profile, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Document>> ListDocumentsAsync(bool includeArchived, CancellationToken cancellationToken = default);
+    Task<Document?> GetDocumentAsync(Guid id, CancellationToken cancellationToken = default);
+    Task AddDocumentAsync(Document document, CancellationToken cancellationToken = default);
+    Task UpdateDocumentAsync(Document document, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ApplicationDocumentSnapshot>> ListApplicationDocumentSnapshotsAsync(Guid applicationId, CancellationToken cancellationToken = default);
+    Task AddApplicationDocumentSnapshotAsync(ApplicationDocumentSnapshot snapshot, CancellationToken cancellationToken = default);
 }

@@ -4,8 +4,8 @@ using SASD.Bewerbungsmanager.WinForms.Controls;
 namespace SASD.Bewerbungsmanager.WinForms.Forms;
 
 /// <summary>
-/// Main application shell. Milestone 1 uses a stable Windows business-application layout with
-/// navigation on the left and one working area on the right; individual controls own no business logic.
+/// Main application shell for the Operational MVP. Navigation follows a classic Windows business
+/// application pattern and keeps the frequently used operational areas one click away.
 /// </summary>
 public sealed class MainForm : Form
 {
@@ -17,10 +17,10 @@ public sealed class MainForm : Form
     public MainForm(IServiceProvider services)
     {
         _services = services;
-        Text = "SASD Bewerbungsmanager — Milestone 1";
+        Text = "SASD Bewerbungsmanager — v0.1.0 Operational MVP";
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(1100, 700);
-        Size = new Size(1280, 800);
+        MinimumSize = new Size(1150, 720);
+        Size = new Size(1320, 840);
         AutoScaleMode = AutoScaleMode.Dpi;
 
         var navigation = BuildNavigation();
@@ -34,38 +34,44 @@ public sealed class MainForm : Form
         var navigation = new FlowLayoutPanel
         {
             Dock = DockStyle.Left,
-            Width = 190,
+            Width = 205,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
             Padding = new Padding(10, 16, 10, 10),
+            AutoScroll = true,
         };
 
         var title = new Label
         {
             Text = "SASD\nBewerbungsmanager",
             AutoSize = false,
-            Width = 165,
+            Width = 178,
             Height = 56,
             Font = new Font(Font.FontFamily, 11, FontStyle.Bold),
         };
         navigation.Controls.Add(title);
-        navigation.Controls.Add(NavButton("Heute / Übersicht", () => ShowView<DashboardControl>()));
-        navigation.Controls.Add(NavButton("Organisationen", () => ShowView<OrganizationsControl>()));
-        navigation.Controls.Add(NavButton("Kontakte", () => ShowView<ContactsControl>()));
-        navigation.Controls.Add(NavButton("Stellen", () => ShowView<OpportunitiesControl>()));
+        navigation.Controls.Add(NavButton("Heute", () => ShowView<DashboardControl>()));
+        navigation.Controls.Add(NavButton("Aufgaben", () => ShowView<TasksControl>()));
+        navigation.Controls.Add(NavButton("Termine", () => ShowView<AppointmentsControl>()));
+        navigation.Controls.Add(NavButton("Verlauf", () => ShowView<ActivitiesControl>()));
+        navigation.Controls.Add(NavButton("Suchquellen", () => ShowView<SearchProfilesControl>()));
         navigation.Controls.Add(NavButton("Bewerbungen", () => ShowView<ApplicationsControl>()));
+        navigation.Controls.Add(NavButton("Stellen", () => ShowView<OpportunitiesControl>()));
+        navigation.Controls.Add(NavButton("Kontakte", () => ShowView<ContactsControl>()));
+        navigation.Controls.Add(NavButton("Organisationen", () => ShowView<OrganizationsControl>()));
+        navigation.Controls.Add(NavButton("Dokumente", () => ShowView<DocumentsControl>()));
         return navigation;
     }
 
-    private Button NavButton(string text, Action action)
+    private static Button NavButton(string text, Action action)
     {
         var button = new Button
         {
             Text = text,
-            Width = 165,
-            Height = 42,
+            Width = 178,
+            Height = 38,
             TextAlign = ContentAlignment.MiddleLeft,
-            Margin = new Padding(0, 0, 0, 6),
+            Margin = new Padding(0, 0, 0, 5),
         };
         button.Click += (_, _) => action();
         return button;
@@ -73,6 +79,9 @@ public sealed class MainForm : Form
 
     private void ShowView<TControl>() where TControl : Control
     {
+        // ActivatorUtilities creates the disposable UserControl without making the root DI
+        // container retain every transient view until application shutdown. Constructor
+        // dependencies still come from DI, while MainForm remains responsible for view disposal.
         var next = ActivatorUtilities.CreateInstance<TControl>(_services);
         next.Dock = DockStyle.Fill;
 

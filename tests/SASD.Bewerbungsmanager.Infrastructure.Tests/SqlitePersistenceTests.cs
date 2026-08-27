@@ -3,6 +3,8 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SASD.Bewerbungsmanager.Domain.Entities;
 using JobApplication = SASD.Bewerbungsmanager.Domain.Entities.Application;
+using TrackerActivity = SASD.Bewerbungsmanager.Domain.Entities.Activity;
+using TrackerDocument = SASD.Bewerbungsmanager.Domain.Entities.Document;
 using SASD.Bewerbungsmanager.Domain.Enums;
 using SASD.Bewerbungsmanager.Infrastructure.Persistence;
 
@@ -172,6 +174,125 @@ public sealed class SqlitePersistenceTests
         Assert.Equal(
             new[] { newerSource.Id, olderSource.Id },
             sources.Select(item => item.Id));
+    }
+
+    [Fact]
+    public async Task OperationalMvpEntities_RoundTripThroughSqlite()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<ApplicationTrackerDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        await using (var setup = new ApplicationTrackerDbContext(options))
+        {
+            await setup.Database.MigrateAsync();
+        }
+
+        var now = new DateTimeOffset(2026, 8, 26, 10, 0, 0, TimeSpan.Zero);
+        var opportunity = new Opportunity
+        {
+            Id = Guid.NewGuid(),
+            Title = "Synthetic Platform Engineer",
+            DescriptionSnapshot = "Synthetic role description.",
+            Status = OpportunityStatus.Applied,
+            FoundAtUtc = now,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+        };
+        var application = new JobApplication
+        {
+            Id = Guid.NewGuid(),
+            OpportunityId = opportunity.Id,
+            StartedAtUtc = now,
+            Channel = ApplicationChannel.Email,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+        };
+        application.InitializeStage(ApplicationStage.Submitted, now);
+        var activity = new TrackerActivity
+        {
+            Id = Guid.NewGuid(),
+            OpportunityId = opportunity.Id,
+            ApplicationId = application.Id,
+            Kind = ActivityKind.Interview,
+            Status = ActivityStatus.Planned,
+            Subject = "Synthetic interview",
+            ScheduledAtUtc = now.AddDays(1),
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+        };
+        var workItem = new TrackerTask
+        {
+            Id = Guid.NewGuid(),
+            ApplicationId = application.Id,
+            Kind = WorkItemKind.WaitingFor,
+            Status = WorkItemStatus.Open,
+            Title = "Synthetic feedback",
+            DueAtUtc = now.AddDays(2),
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+        };
+        var searchProfile = new SearchProfile
+        {
+            Id = Guid.NewGuid(),
+            Name = "Synthetic Linux search",
+            Source = "Example Portal",
+            Url = "https://example.invalid/search",
+            CheckIntervalDays = 1,
+            NextCheckAtUtc = now,
+            IsActive = true,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+        };
+        var document = new TrackerDocument
+        {
+            Id = Guid.NewGuid(),
+            Type = DocumentType.Cv,
+            Label = "Synthetic CV",
+            Version = "2026-08",
+            Language = "DE",
+            OriginalPath = "C:/synthetic/cv.pdf",
+            Sha256 = new string('A', 64),
+            SizeBytes = 1234,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+        };
+        var snapshot = new ApplicationDocumentSnapshot
+        {
+            Id = Guid.NewGuid(),
+            ApplicationId = application.Id,
+            DocumentId = document.Id,
+            Type = DocumentType.Cv,
+            Label = document.Label,
+            Version = document.Version,
+            Language = document.Language,
+            OriginalPath = document.OriginalPath,
+            StoredPath = "C:/synthetic/archive/cv.pdf",
+            Sha256 = document.Sha256,
+            CapturedAtUtc = now,
+        };
+
+        await using (var write = new ApplicationTrackerDbContext(options))
+        {
+            write.Opportunities.Add(opportunity);
+            write.Applications.Add(application);
+            write.Activities.Add(activity);
+            write.Tasks.Add(workItem);
+            write.SearchProfiles.Add(searchProfile);
+            write.Documents.Add(document);
+            write.ApplicationDocumentSnapshots.Add(snapshot);
+            await write.SaveChangesAsync();
+        }
+
+        var store = new TrackerDataStore(new TestDbContextFactory(options));
+
+        Assert.Single(await store.ListActivitiesAsync());
+        Assert.Single(await store.ListTasksAsync());
+        Assert.Single(await store.ListSearchProfilesAsync(includeInactive: false));
+        Assert.Single(await store.ListDocumentsAsync(includeArchived: false));
+        Assert.Single(await store.ListApplicationDocumentSnapshotsAsync(application.Id));
     }
 
     private sealed class TestDbContextFactory(DbContextOptions<ApplicationTrackerDbContext> options)

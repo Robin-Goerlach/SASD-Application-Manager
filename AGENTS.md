@@ -8,7 +8,7 @@ This repository implements the SASD Bewerbungsmanager / SASD Application Tracker
 
 - `Domain` contains business entities and rules and must not reference WinForms, EF Core, SQLite, or file-system adapters.
 - `Application` contains use cases, validation, and ports.
-- `Infrastructure` implements EF Core / SQLite persistence.
+- `Infrastructure` implements EF Core / SQLite persistence and technical file-system adapters such as document hashing/snapshots.
 - `WinForms` is presentation only; do not move business rules into Forms or UserControls.
 
 ## Development rules
@@ -27,4 +27,5 @@ This repository implements the SASD Bewerbungsmanager / SASD Application Tracker
 dotnet restore .\SASD.Bewerbungsmanager.sln
 dotnet build .\SASD.Bewerbungsmanager.sln -c Release --no-restore
 dotnet test .\SASD.Bewerbungsmanager.sln -c Release --no-build
+dotnet run --project .\src\SASD.Bewerbungsmanager.WinForms\SASD.Bewerbungsmanager.WinForms.csproj
 ```

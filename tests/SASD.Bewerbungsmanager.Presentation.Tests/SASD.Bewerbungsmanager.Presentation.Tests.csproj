@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\SASD.Bewerbungsmanager.WinForms\SASD.Bewerbungsmanager.WinForms.csproj" />
+    <ProjectReference Include="..\..\src\SASD.Bewerbungsmanager.Infrastructure\SASD.Bewerbungsmanager.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\SASD.Bewerbungsmanager.Application\SASD.Bewerbungsmanager.Application.csproj" />
     <ProjectReference Include="..\..\src\SASD.Bewerbungsmanager.Domain\SASD.Bewerbungsmanager.Domain.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

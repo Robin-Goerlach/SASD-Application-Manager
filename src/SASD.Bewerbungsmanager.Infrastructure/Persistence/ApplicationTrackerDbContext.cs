@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using SASD.Bewerbungsmanager.Domain.Entities;
 using JobApplication = SASD.Bewerbungsmanager.Domain.Entities.Application;
+using TrackerActivity = SASD.Bewerbungsmanager.Domain.Entities.Activity;
+using TrackerDocument = SASD.Bewerbungsmanager.Domain.Entities.Document;
 
 namespace SASD.Bewerbungsmanager.Infrastructure.Persistence;
 
@@ -29,8 +31,31 @@ public sealed class ApplicationTrackerDbContext(DbContextOptions<ApplicationTrac
     /// <summary>Gets the application-status-history table.</summary>
     public DbSet<ApplicationStatusHistory> ApplicationStatusHistory => Set<ApplicationStatusHistory>();
 
+    /// <summary>Gets the timeline activities and appointments table.</summary>
+    public DbSet<TrackerActivity> Activities => Set<TrackerActivity>();
+
+    /// <summary>Gets ACTION and WAITING_FOR work items.</summary>
+    public DbSet<TrackerTask> Tasks => Set<TrackerTask>();
+
+    /// <summary>Gets manually checked search routines.</summary>
+    public DbSet<SearchProfile> SearchProfiles => Set<SearchProfile>();
+
+    /// <summary>Gets the document-version catalog.</summary>
+    public DbSet<TrackerDocument> Documents => Set<TrackerDocument>();
+
+    /// <summary>Gets immutable document snapshots assigned to applications.</summary>
+    public DbSet<ApplicationDocumentSnapshot> ApplicationDocumentSnapshots => Set<ApplicationDocumentSnapshot>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
+        => ConfigureCurrentModel(modelBuilder);
+
+    /// <summary>
+    /// Applies the complete current persistence model. The migration snapshot reuses this method
+    /// so hand-maintained milestone migrations cannot silently drift away from runtime mappings.
+    /// </summary>
+    /// <param name="modelBuilder">EF Core model builder.</param>
+    internal static void ConfigureCurrentModel(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
@@ -40,6 +65,11 @@ public sealed class ApplicationTrackerDbContext(DbContextOptions<ApplicationTrac
         ConfigureSourceLink(modelBuilder);
         ConfigureApplication(modelBuilder);
         ConfigureApplicationStatusHistory(modelBuilder);
+        ConfigureActivity(modelBuilder);
+        ConfigureTask(modelBuilder);
+        ConfigureSearchProfile(modelBuilder);
+        ConfigureDocument(modelBuilder);
+        ConfigureApplicationDocumentSnapshot(modelBuilder);
     }
 
     private static void ConfigureOrganization(ModelBuilder modelBuilder)
@@ -133,10 +163,6 @@ public sealed class ApplicationTrackerDbContext(DbContextOptions<ApplicationTrac
             .WithOne()
             .HasForeignKey(item => item.ApplicationId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // Configure access mode on the navigation itself. The relationship builder exposes
-        // foreign-key metadata, and EF Core 10 does not provide SetPropertyAccessMode on
-        // IMutableForeignKey. The field-only navigation keeps the domain collection read-only.
         entity.Navigation("_statusHistory")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
@@ -146,15 +172,103 @@ public sealed class ApplicationTrackerDbContext(DbContextOptions<ApplicationTrac
         var entity = modelBuilder.Entity<ApplicationStatusHistory>();
         entity.ToTable("application_status_history");
         entity.HasKey(item => item.Id);
-
-        // Status-history identifiers are created by the domain with Guid.NewGuid(). Explicitly
-        // disable value generation so EF Core treats a history item appended to an already
-        // tracked application as a new row even though its Guid key is already populated.
-        // Without this, a generated-key convention can classify the dependent as existing and
-        // issue an UPDATE that affects zero rows, resulting in DbUpdateConcurrencyException.
         entity.Property(item => item.Id).ValueGeneratedNever();
         entity.Property(item => item.Stage).HasConversion<string>().HasMaxLength(50).IsRequired();
         entity.Property(item => item.Note).HasMaxLength(2000);
         entity.HasIndex(item => new { item.ApplicationId, item.ChangedAtUtc });
+    }
+
+    private static void ConfigureActivity(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<TrackerActivity>();
+        entity.ToTable("activities");
+        entity.HasKey(item => item.Id);
+        entity.Property(item => item.Id).ValueGeneratedNever();
+        entity.Property(item => item.Kind).HasConversion<string>().HasMaxLength(50).IsRequired();
+        entity.Property(item => item.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+        entity.Property(item => item.Subject).HasMaxLength(250).IsRequired();
+        entity.Property(item => item.Notes).HasMaxLength(8000);
+        entity.HasIndex(item => item.ApplicationId);
+        entity.HasIndex(item => item.OpportunityId);
+        entity.HasIndex(item => item.ScheduledAtUtc);
+        entity.HasOne<Opportunity>().WithMany().HasForeignKey(item => item.OpportunityId).OnDelete(DeleteBehavior.SetNull);
+        entity.HasOne<JobApplication>().WithMany().HasForeignKey(item => item.ApplicationId).OnDelete(DeleteBehavior.SetNull);
+        entity.HasOne<Contact>().WithMany().HasForeignKey(item => item.ContactId).OnDelete(DeleteBehavior.SetNull);
+        entity.HasOne<Organization>().WithMany().HasForeignKey(item => item.OrganizationId).OnDelete(DeleteBehavior.SetNull);
+    }
+
+    private static void ConfigureTask(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<TrackerTask>();
+        entity.ToTable("work_items");
+        entity.HasKey(item => item.Id);
+        entity.Property(item => item.Id).ValueGeneratedNever();
+        entity.Property(item => item.Kind).HasConversion<string>().HasMaxLength(50).IsRequired();
+        entity.Property(item => item.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+        entity.Property(item => item.Title).HasMaxLength(250).IsRequired();
+        entity.Property(item => item.Notes).HasMaxLength(8000);
+        entity.HasIndex(item => new { item.Kind, item.Status });
+        entity.HasIndex(item => item.DueAtUtc);
+        entity.HasIndex(item => item.ApplicationId);
+        entity.HasIndex(item => item.OpportunityId);
+        entity.HasOne<Opportunity>().WithMany().HasForeignKey(item => item.OpportunityId).OnDelete(DeleteBehavior.SetNull);
+        entity.HasOne<JobApplication>().WithMany().HasForeignKey(item => item.ApplicationId).OnDelete(DeleteBehavior.SetNull);
+        entity.HasOne<Contact>().WithMany().HasForeignKey(item => item.ContactId).OnDelete(DeleteBehavior.SetNull);
+        entity.HasOne<Organization>().WithMany().HasForeignKey(item => item.OrganizationId).OnDelete(DeleteBehavior.SetNull);
+    }
+
+    private static void ConfigureSearchProfile(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<SearchProfile>();
+        entity.ToTable("search_profiles");
+        entity.HasKey(item => item.Id);
+        entity.Property(item => item.Id).ValueGeneratedNever();
+        entity.Property(item => item.Name).HasMaxLength(200).IsRequired();
+        entity.Property(item => item.Source).HasMaxLength(100).IsRequired();
+        entity.Property(item => item.Url).HasMaxLength(2048).IsRequired();
+        entity.Property(item => item.Notes).HasMaxLength(4000);
+        entity.HasIndex(item => item.NextCheckAtUtc);
+        entity.HasIndex(item => item.IsActive);
+    }
+
+    private static void ConfigureDocument(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<TrackerDocument>();
+        entity.ToTable("documents");
+        entity.HasKey(item => item.Id);
+        entity.Property(item => item.Id).ValueGeneratedNever();
+        entity.Property(item => item.Type).HasConversion<string>().HasMaxLength(50).IsRequired();
+        entity.Property(item => item.Label).HasMaxLength(200).IsRequired();
+        entity.Property(item => item.Version).HasMaxLength(100).IsRequired();
+        entity.Property(item => item.Language).HasMaxLength(20).IsRequired();
+        entity.Property(item => item.Tags).HasMaxLength(1000);
+        entity.Property(item => item.OriginalPath).HasMaxLength(4096).IsRequired();
+        entity.Property(item => item.Sha256).HasMaxLength(64).IsRequired();
+        entity.HasIndex(item => item.Sha256);
+        entity.HasIndex(item => new { item.Type, item.IsArchived });
+    }
+
+    private static void ConfigureApplicationDocumentSnapshot(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<ApplicationDocumentSnapshot>();
+        entity.ToTable("application_document_snapshots");
+        entity.HasKey(item => item.Id);
+        entity.Property(item => item.Id).ValueGeneratedNever();
+        entity.Property(item => item.Type).HasConversion<string>().HasMaxLength(50).IsRequired();
+        entity.Property(item => item.Label).HasMaxLength(200).IsRequired();
+        entity.Property(item => item.Version).HasMaxLength(100).IsRequired();
+        entity.Property(item => item.Language).HasMaxLength(20).IsRequired();
+        entity.Property(item => item.OriginalPath).HasMaxLength(4096).IsRequired();
+        entity.Property(item => item.StoredPath).HasMaxLength(4096).IsRequired();
+        entity.Property(item => item.Sha256).HasMaxLength(64).IsRequired();
+        entity.HasIndex(item => item.ApplicationId);
+        entity.HasOne<JobApplication>()
+            .WithMany()
+            .HasForeignKey(item => item.ApplicationId)
+            .OnDelete(DeleteBehavior.Cascade);
+        entity.HasOne<TrackerDocument>()
+            .WithMany()
+            .HasForeignKey(item => item.DocumentId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

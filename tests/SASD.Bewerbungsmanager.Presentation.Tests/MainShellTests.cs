@@ -1,35 +1,47 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows.Forms;
+using SASD.Bewerbungsmanager.Application;
+using SASD.Bewerbungsmanager.Infrastructure;
 using SASD.Bewerbungsmanager.WinForms;
-using MilestoneMainForm = SASD.Bewerbungsmanager.WinForms.Forms.MainForm;
-using LegacyMainForm = SASD.Bewerbungsmanager.WinForms.MainForm;
+using SASD.Bewerbungsmanager.WinForms.Controls;
+using OperationalMainForm = SASD.Bewerbungsmanager.WinForms.Forms.MainForm;
 
 namespace SASD.Bewerbungsmanager.Presentation.Tests;
 
-/// <summary>
-/// Guards the WinForms composition root. In particular, these tests prevent the obsolete M0 shell
-/// in the root WinForms namespace from silently shadowing the current Milestone-1 main form.
-/// </summary>
+/// <summary>Guards the real Operational-MVP WinForms composition root and view dependencies.</summary>
 public sealed class MainShellTests
 {
     [Fact]
-    public void Milestone_main_form_is_a_windows_form()
+    public void Operational_main_form_is_a_windows_form()
     {
-        Assert.True(typeof(Form).IsAssignableFrom(typeof(MilestoneMainForm)));
+        Assert.True(typeof(Form).IsAssignableFrom(typeof(OperationalMainForm)));
     }
 
     [Fact]
-    public void WinForms_composition_registers_current_shell_not_legacy_shell()
+    public void Full_composition_root_validates_all_registered_views()
     {
         var services = new ServiceCollection();
+        var configuration = new ConfigurationManager
+        {
+            ["Database:Path"] = Path.Combine(Path.GetTempPath(), $"sasd-composition-{Guid.NewGuid():N}.db"),
+        };
         services.AddLogging();
+        services.AddApplicationServices();
+        services.AddTrackerInfrastructure(configuration);
         services.AddWinFormsPresentation();
 
-        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(MilestoneMainForm));
-        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(LegacyMainForm));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(OperationalMainForm));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(DashboardControl));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(TasksControl));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(AppointmentsControl));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(ActivitiesControl));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(SearchProfilesControl));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(DocumentsControl));
 
-        // ValidateOnBuild verifies constructor dependencies without constructing a Form on the
-        // xUnit worker thread. This catches missing DI registrations before a real GUI start.
+        // This validates constructor dependencies for every registered service without opening a
+        // window on the xUnit worker thread. It protects against the class of startup/DI errors
+        // that escaped the first Milestone-1 test suite.
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateOnBuild = true,

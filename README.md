@@ -6,38 +6,89 @@ Local-first Windows-Desktopanwendung für die persönliche Arbeitssuche.
 >
 > **Morgen produktiv nutzbar statt in Monaten perfekt.**
 
-## Stand dieser Lieferung
+## Aktueller Entwicklungsstand
 
-Diese ZIP enthält **Milestone 1 – Kernakte** als vollständige Repository-Baseline. Der Milestone konzentriert sich bewusst auf die fachliche Kernakte und baut noch nicht die Operational-MVP-Funktionen `Activity`, `Task`, `ACTION`, `WAITING_FOR`, Termine, SearchProfiles oder Dokumentversionen.
+Diese Lieferung implementiert das **Operational MVP / v0.1.0** auf Basis des zuvor verifizierten
+Milestone-1-Kerns.
 
-Enthalten sind:
+Der Bewerbungsmanager kann damit neben Organisationen, Kontakten, Stellen und Bewerbungen nun auch
+die tägliche operative Arbeit steuern:
 
-- C# / .NET 10 / WinForms
-- modularer Monolith mit Domain, Application, Infrastructure und WinForms
-- SQLite + Entity Framework Core
-- EF-Core-Migration `InitialMilestone1`
-- kurzlebige DbContexts über `IDbContextFactory`
-- Organization: Auflisten, Anlegen und Bearbeiten
-- Contact: Auflisten, Anlegen und Bearbeiten
-- Opportunity: Auflisten, Anlegen und Bearbeiten
-- Rollenbeschreibung als Snapshot
-- SourceLink-Erfassung
-- Application-Anlage
-- Application-Statuswechsel mit persistenter Statushistorie
-- Dashboard-Grundgerüst
-- Navigation `Heute / Organisationen / Kontakte / Stellen / Bewerbungen`
-- Domain-, Application-, Infrastructure-, Presentation- und Systemtests
-- synthetische Testdaten
+- **Heute-Cockpit** mit überfälligen und aktuellen ACTIONs
+- **WAITING_FOR** als eigener, sichtbarer nächster Schritt
+- **Activity / Timeline** für Kommunikation, Notizen und Verlauf
+- **Termine** einschließlich Interviews, Meetings und Behördenterminen
+- **SearchProfiles** für regelmäßig manuell geprüfte Jobsuchen
+- **Dokumentkatalog** mit SHA-256-Fingerprints
+- **unveränderliche Dokument-Snapshots pro Bewerbung**
+- **„Kontext für ChatGPT kopieren“** ohne KI-Aufruf innerhalb der Anwendung
+
+Details des Milestones: [`docs/MILESTONE-2-OPERATIONAL-MVP.md`](docs/MILESTONE-2-OPERATIONAL-MVP.md)
+
+## Technische Basis
+
+- C# / .NET 10 LTS
+- Windows Forms
+- modularer Monolith
+- SQLite
+- Entity Framework Core 10
+- Generic Host
+- Dependency Injection
+- kurzlebige DbContexts über `IDbContextFactory<ApplicationTrackerDbContext>`
+- lokale Datenhaltung ohne Cloudpflicht
+
+## Fachliche Bereiche
+
+```text
+Heute
+Aufgaben
+Termine
+Verlauf
+Suchquellen
+Bewerbungen
+Stellen
+Kontakte
+Organisationen
+Dokumente
+```
+
+### ACTION und WAITING_FOR
+
+`TrackerTask` trennt bewusst zwei Verantwortlichkeiten:
+
+- `ACTION`: Ich muss selbst etwas tun.
+- `WAITING_FOR`: Ich warte auf eine andere Person oder Organisation.
+
+Diese Trennung ist zentral für das Heute-Cockpit.
+
+### Dokumentversionen
+
+Beim Registrieren einer Datei werden Pfad, Größe und SHA-256 erfasst. Erst wenn die konkrete
+Version tatsächlich einer Bewerbung zugeordnet wird, prüft die Anwendung den Hash erneut und legt
+eine private lokale Kopie ab.
+
+```text
+%LOCALAPPDATA%\SASD GmbH\SASD Bewerbungsmanager\Documents\<ApplicationId>\
+```
+
+Damit bleibt nachvollziehbar, welche Datei wirklich verwendet wurde.
+
+### Kontext für ChatGPT
+
+Der Bewerbungsmanager erzeugt einen strukturierten lokalen Text aus Position, Organisation,
+Kontakten, Verlauf, offenen Aufgaben, WAITING_FOR, Dokumentversionen und nächstem Termin und kopiert
+ihm in die Windows-Zwischenablage. Es findet **kein automatischer KI-Aufruf** statt.
 
 ## Voraussetzungen
 
 - Windows 11 x64
 - .NET 10 SDK
-- Visual Studio 2026 bzw. eine Visual-Studio-Version mit .NET-10-/WinForms-Unterstützung
+- Visual Studio mit .NET-10-/WinForms-Unterstützung oder .NET CLI
 
 ## Bauen und testen
 
 ```powershell
+dotnet clean .\SASD.Bewerbungsmanager.sln
 dotnet restore .\SASD.Bewerbungsmanager.sln
 dotnet build .\SASD.Bewerbungsmanager.sln -c Release --no-restore
 dotnet test .\SASD.Bewerbungsmanager.sln -c Release --no-build
@@ -56,21 +107,41 @@ test.cmd
 dotnet run --project .\src\SASD.Bewerbungsmanager.WinForms\SASD.Bewerbungsmanager.WinForms.csproj
 ```
 
-## EF-Core-Migrationen weiterentwickeln
+Beim Start führt `DatabaseInitializer` ausstehende EF-Core-Migrationen automatisch aus. Die
+bestehende Milestone-1-Datenbank muss für v0.1.0 **nicht gelöscht** werden.
 
-Die Infrastructure-Schicht enthält eine Design-Time-Factory. Neue Migrationen können deshalb ohne Start der WinForms-Anwendung erzeugt werden:
+## Lokale Daten
 
-```powershell
-dotnet ef migrations add <Name> --project .\src\SASD.Bewerbungsmanager.Infrastructure --startup-project .\src\SASD.Bewerbungsmanager.WinForms
-```
-
-Die produktive SQLite-Datei wird standardmäßig **nicht im Repository** angelegt, sondern unter dem lokalen Benutzerprofil:
+Die produktive SQLite-Datei liegt standardmäßig außerhalb des Repositorys:
 
 ```text
 %LOCALAPPDATA%\SASD GmbH\SASD Bewerbungsmanager\application-tracker.db
 ```
 
-Damit können personenbezogene Bewerbungsdaten nicht versehentlich über eine normale Git-Operation committed werden.
+Runtime-Diagnosen werden lokal geschrieben nach:
+
+```text
+%LOCALAPPDATA%\SASD GmbH\SASD Bewerbungsmanager\Logs\application.log
+```
+
+Persönliche Dokument-Snapshots liegen ebenfalls unter `%LOCALAPPDATA%` und gehören nicht in Git.
+
+## EF-Core-Migrationen weiterentwickeln
+
+Die Infrastructure-Schicht enthält eine Design-Time-Factory:
+
+```powershell
+dotnet ef migrations add <Name> `
+  --project .\src\SASD.Bewerbungsmanager.Infrastructure `
+  --startup-project .\src\SASD.Bewerbungsmanager.WinForms
+```
+
+Aktuelle Migrationen:
+
+```text
+202608260001_InitialMilestone1
+202608260002_OperationalMvp
+```
 
 ## Solution-Struktur
 
@@ -89,25 +160,16 @@ tests/
   SASD.Bewerbungsmanager.SystemTests/
 ```
 
-## Nächster Milestone
+## Nächster geplanter Entwicklungsschritt
 
-Nach Stabilisierung dieses Kerns folgt das **Operational MVP / v0.1.0**. Dort soll `Heute` tatsächlich die operative Arbeit steuern: Timeline/Activities, `ACTION`, `WAITING_FOR`, Termine, SearchProfiles, Dokumentversionen und „Kontext für ChatGPT kopieren“.
+Nach einer kurzen realen Nutzung von v0.1.0 folgt gemäß Versionspfad **v0.2.0 – Nachweise, Export
+und Austausch**. Der konkrete Umfang bleibt eine Strategieentscheidung und wird nicht in diesen
+Milestone vorgezogen.
 
-Details: [`docs/MILESTONE-1.md`](docs/MILESTONE-1.md)
+Historischer Kern: [`docs/MILESTONE-1.md`](docs/MILESTONE-1.md)
 
-### Milestone-1-Hotfix (26.08.2026)
+## Upgrade aus dem verifizierten Milestone-1-Stand
 
-Der Hotfix aktualisiert die sicherheitsrelevanten NuGet-Abhängigkeiten und behebt den
-C#-Namenskonflikt zwischen dem Projekt-Namespace `SASD.Bewerbungsmanager.Application`
-und der Domain-Entität `Application`. NuGet-Sicherheitswarnungen werden bewusst nicht
-unterdrückt.
-
-## Runtime-Diagnose
-
-Bei unerwarteten UI-/Laufzeitfehlern schreibt die Anwendung den vollständigen Stacktrace lokal nach:
-
-```text
-%LOCALAPPDATA%\SASD GmbH\SASD Bewerbungsmanager\Logs\application.log
-```
-
-Die Logdatei liegt bewusst außerhalb des Repositorys. Fehlermeldungen zeigen zusätzlich Exception-Typ und technische Kurzmeldung an, damit Laufzeitprobleme reproduzierbar diagnostiziert werden können.
+Bei Repositorys, die während der Hotfix-Runde mehrfach überkopiert wurden, bitte einmal die
+Hinweise in [`docs/UPGRADE-v0.1.0.md`](docs/UPGRADE-v0.1.0.md) beachten. Dort ist insbesondere das
+optionale Entfernen des alten M0-`MainForm`-/`MainShellPresenter`-Gerüsts beschrieben.

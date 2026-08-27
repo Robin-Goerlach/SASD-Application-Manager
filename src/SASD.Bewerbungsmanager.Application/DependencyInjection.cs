@@ -18,6 +18,12 @@ public static class DependencyInjection
         services.AddTransient<OpportunityService>();
         services.AddTransient<ApplicationService>();
         services.AddTransient<DashboardService>();
+        services.AddTransient<ActivityService>();
+        services.AddTransient<WorkItemService>();
+        services.AddTransient<SearchProfileService>();
+        services.AddTransient<DocumentService>();
+        services.AddTransient<TodayService>();
+        services.AddTransient<ApplicationContextService>();
         return services;
     }
 }

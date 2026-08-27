@@ -32,6 +32,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddDbContextFactory<ApplicationTrackerDbContext>(options =>
             options.UseSqlite($"Data Source={databasePath};Foreign Keys=True"));
         services.AddSingleton<ITrackerDataStore, TrackerDataStore>();
+        services.AddSingleton<IDocumentArchive, FileSystemDocumentArchive>();
         services.AddSingleton<DatabaseInitializer>();
         return services;
     }

@@ -27,6 +27,9 @@ public sealed class CoreWorkflowTests
             var organizations = new OrganizationService(store, clock);
             var opportunities = new OpportunityService(store, clock);
             var applications = new ApplicationService(store, clock);
+            var activities = new ActivityService(store, clock);
+            var workItems = new WorkItemService(store, clock);
+            var searches = new SearchProfileService(store, clock);
 
             var employer = await organizations.CreateAsync(new OrganizationInput("Example Health IT GmbH", OrganizationType.Employer, null, null));
             var opportunity = await opportunities.CreateAsync(new OpportunityInput(
@@ -51,6 +54,44 @@ public sealed class CoreWorkflowTests
 
             await applications.ChangeStageAsync(application.Id, ApplicationStage.Submitted, "Unterlagen versendet");
 
+            await workItems.CreateAsync(new WorkItemInput(
+                opportunity.Id,
+                application.Id,
+                null,
+                employer.Id,
+                WorkItemKind.Action,
+                "Interview vorbereiten",
+                null,
+                clock.UtcNow));
+            await workItems.CreateAsync(new WorkItemInput(
+                opportunity.Id,
+                application.Id,
+                null,
+                employer.Id,
+                WorkItemKind.WaitingFor,
+                "Rückmeldung zum Termin",
+                null,
+                clock.UtcNow.AddDays(2)));
+            await activities.CreateAsync(new ActivityInput(
+                opportunity.Id,
+                application.Id,
+                null,
+                employer.Id,
+                ActivityKind.Interview,
+                ActivityStatus.Planned,
+                "Technisches Interview",
+                null,
+                null,
+                clock.UtcNow.AddDays(1)));
+            await searches.CreateAsync(new SearchProfileInput(
+                "Linux Jobs",
+                "Example Portal",
+                "https://example.invalid/jobs",
+                1,
+                clock.UtcNow,
+                true,
+                null));
+
             // Regression for the real WinForms startup path: DashboardService immediately loads
             // and orders opportunities/applications. SQLite cannot order DateTimeOffset in SQL,
             // so this call used to throw as soon as the dashboard became visible.
@@ -59,6 +100,16 @@ public sealed class CoreWorkflowTests
 
             Assert.Equal(1, summary.ActiveOpportunities);
             Assert.Equal(1, summary.Applications);
+
+            var today = await new TodayService(store, clock).GetOverviewAsync();
+            Assert.Single(today.DueActions);
+            Assert.Single(today.WaitingFor);
+            Assert.Single(today.UpcomingAppointments);
+            Assert.Single(today.DueSearchProfiles);
+
+            var contextText = await new ApplicationContextService(store, clock).BuildAsync(application.Id);
+            Assert.Contains("Interview vorbereiten", contextText, StringComparison.Ordinal);
+            Assert.Contains("Rückmeldung zum Termin", contextText, StringComparison.Ordinal);
 
             var persisted = await store.GetApplicationAsync(application.Id);
 
