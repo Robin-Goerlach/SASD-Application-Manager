@@ -17,7 +17,7 @@ public sealed class MainForm : Form
     public MainForm(IServiceProvider services)
     {
         _services = services;
-        Text = "SASD Bewerbungsmanager — v0.2.0 Nachweise & Export";
+        Text = "SASD Bewerbungsmanager — v0.4.0 Jobsuche und Quellenadapter";
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(1150, 720);
         Size = new Size(1320, 840);
@@ -54,6 +54,8 @@ public sealed class MainForm : Form
         navigation.Controls.Add(NavButton("Aufgaben", () => ShowView<TasksControl>()));
         navigation.Controls.Add(NavButton("Termine", () => ShowView<AppointmentsControl>()));
         navigation.Controls.Add(NavButton("Verlauf", () => ShowView<ActivitiesControl>()));
+        navigation.Controls.Add(NavButton("Kommunikation", () => ShowView<CommunicationsControl>()));
+        navigation.Controls.Add(NavButton("Jobsuche", () => ShowView<JobLeadsControl>()));
         navigation.Controls.Add(NavButton("Suchquellen", () => ShowView<SearchProfilesControl>()));
         navigation.Controls.Add(NavButton("Nachweise / Export", () => ShowView<EvidenceExportControl>()));
         navigation.Controls.Add(NavButton("Bewerbungen", () => ShowView<ApplicationsControl>()));

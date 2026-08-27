@@ -26,12 +26,14 @@ public sealed class CoreWorkflowTests
             var store = new TrackerDataStore(factory);
             var organizations = new OrganizationService(store, clock);
             var opportunities = new OpportunityService(store, clock);
+            var contacts = new ContactService(store, clock);
             var applications = new ApplicationService(store, clock);
             var activities = new ActivityService(store, clock);
             var workItems = new WorkItemService(store, clock);
             var searches = new SearchProfileService(store, clock);
 
             var employer = await organizations.CreateAsync(new OrganizationInput("Example Health IT GmbH", OrganizationType.Employer, null, null));
+            var recruiter = await contacts.CreateAsync(new ContactInput(employer.Id, "Erika Beispiel", "Recruiting", "erika@example.invalid", null, null, null));
             var opportunity = await opportunities.CreateAsync(new OpportunityInput(
                 employer.Id,
                 null,
@@ -95,6 +97,33 @@ public sealed class CoreWorkflowTests
                 true,
                 null));
 
+            var communication = new CommunicationImportService(
+                store,
+                clock,
+                new JsonCommunicationHandoffReader(),
+                activities,
+                workItems,
+                opportunities);
+            var importedMail = await communication.ImportAsync(new CommunicationImportInput(
+                "SASD Mail Workbench",
+                "system-test-mail-1",
+                CommunicationDirection.Incoming,
+                CommunicationKind.ApplicationResponse,
+                "Erika Beispiel",
+                "erika@example.invalid",
+                "user@example.invalid",
+                "Einladung zum Gespräch",
+                "Wir möchten Sie zu einem weiteren Gespräch einladen.",
+                clock.UtcNow,
+                "Inbox/SystemTest",
+                opportunity.Id,
+                application.Id,
+                recruiter.Id,
+                employer.Id));
+            Assert.True(importedMail.ActivityCreatedAutomatically);
+            Assert.NotNull(importedMail.Message.ActivityId);
+            Assert.Single(await store.ListCommunicationMessagesAsync());
+
             // Regression for the real WinForms startup path: DashboardService immediately loads
             // and orders opportunities/applications. SQLite cannot order DateTimeOffset in SQL,
             // so this call used to throw as soon as the dashboard became visible.
@@ -109,6 +138,24 @@ public sealed class CoreWorkflowTests
             Assert.Single(today.WaitingFor);
             Assert.Single(today.UpcomingAppointments);
             Assert.Single(today.DueSearchProfiles);
+
+            // v0.4.0 regression: a normalized discovered job can be persisted through the latest
+            // migration without polluting the durable opportunity workflow until the user promotes it.
+            var jobLeads = new JobLeadService(store, clock, [], opportunities, searches);
+            var jobLeadResult = await jobLeads.ImportClipboardAsync(new JobLeadClipboardInput(
+                null,
+                "Example Portal",
+                "system-job-1",
+                "SRE Engineer",
+                "Example Infrastructure GmbH",
+                "Example City",
+                "Remote",
+                null,
+                "https://jobs.example.invalid/system-job-1",
+                "Synthetic job-search result.",
+                null));
+            Assert.False(jobLeadResult.WasDuplicate);
+            Assert.Single(await store.ListJobLeadsAsync());
 
             var contextText = await new ApplicationContextService(store, clock).BuildAsync(application.Id);
             Assert.Contains("Interview vorbereiten", contextText, StringComparison.Ordinal);

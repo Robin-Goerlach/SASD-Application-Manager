@@ -56,4 +56,19 @@ public interface ITrackerDataStore
 
     Task<IReadOnlyList<ApplicationDocumentSnapshot>> ListApplicationDocumentSnapshotsAsync(Guid applicationId, CancellationToken cancellationToken = default);
     Task AddApplicationDocumentSnapshotAsync(ApplicationDocumentSnapshot snapshot, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<CommunicationMessage>> ListCommunicationMessagesAsync(CancellationToken cancellationToken = default);
+    Task<CommunicationMessage?> GetCommunicationMessageAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<CommunicationMessage?> FindCommunicationMessageByFingerprintAsync(string fingerprintSha256, CancellationToken cancellationToken = default);
+    Task<CommunicationMessage?> FindCommunicationMessageByExternalIdentityAsync(string sourceSystem, string externalMessageId, CancellationToken cancellationToken = default);
+    Task AddCommunicationMessageAsync(CommunicationMessage message, CancellationToken cancellationToken = default);
+    Task UpdateCommunicationMessageAsync(CommunicationMessage message, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<JobLead>> ListJobLeadsAsync(CancellationToken cancellationToken = default);
+    Task<JobLead?> GetJobLeadAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<JobLead?> FindJobLeadByFingerprintAsync(string fingerprintSha256, CancellationToken cancellationToken = default);
+    Task<JobLead?> FindJobLeadByExternalIdentityAsync(string sourceSystem, string externalJobId, CancellationToken cancellationToken = default);
+    Task<JobLead?> FindJobLeadBySourceUrlAsync(string sourceUrl, CancellationToken cancellationToken = default);
+    Task AddJobLeadAsync(JobLead lead, CancellationToken cancellationToken = default);
+    Task UpdateJobLeadAsync(JobLead lead, CancellationToken cancellationToken = default);
 }

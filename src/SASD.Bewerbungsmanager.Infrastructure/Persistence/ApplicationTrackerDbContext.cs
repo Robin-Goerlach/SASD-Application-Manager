@@ -46,13 +46,20 @@ public sealed class ApplicationTrackerDbContext(DbContextOptions<ApplicationTrac
     /// <summary>Gets immutable document snapshots assigned to applications.</summary>
     public DbSet<ApplicationDocumentSnapshot> ApplicationDocumentSnapshots => Set<ApplicationDocumentSnapshot>();
 
+    /// <summary>Gets normalized communication messages imported from local handoff sources.</summary>
+    public DbSet<CommunicationMessage> CommunicationMessages => Set<CommunicationMessage>();
+
+    /// <summary>Gets discovered job-source results awaiting review or promotion.</summary>
+    public DbSet<JobLead> JobLeads => Set<JobLead>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => ConfigureCurrentModel(modelBuilder);
 
     /// <summary>
-    /// Applies the complete current persistence model. The migration snapshot reuses this method
-    /// so hand-maintained milestone migrations cannot silently drift away from runtime mappings.
+    /// Applies the complete current runtime persistence model. Migration snapshots intentionally keep
+    /// their own frozen, provider-specific model descriptions so historical migrations do not drift
+    /// when the runtime model evolves.
     /// </summary>
     /// <param name="modelBuilder">EF Core model builder.</param>
     internal static void ConfigureCurrentModel(ModelBuilder modelBuilder)
@@ -70,6 +77,8 @@ public sealed class ApplicationTrackerDbContext(DbContextOptions<ApplicationTrac
         ConfigureSearchProfile(modelBuilder);
         ConfigureDocument(modelBuilder);
         ConfigureApplicationDocumentSnapshot(modelBuilder);
+        ConfigureCommunicationMessage(modelBuilder);
+        ConfigureJobLead(modelBuilder);
     }
 
     private static void ConfigureOrganization(ModelBuilder modelBuilder)
@@ -271,4 +280,67 @@ public sealed class ApplicationTrackerDbContext(DbContextOptions<ApplicationTrac
             .HasForeignKey(item => item.DocumentId)
             .OnDelete(DeleteBehavior.SetNull);
     }
+
+    private static void ConfigureCommunicationMessage(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<CommunicationMessage>();
+        entity.ToTable("communication_messages");
+        entity.HasKey(item => item.Id);
+        entity.Property(item => item.Id).ValueGeneratedNever();
+        entity.Property(item => item.SourceSystem).HasMaxLength(100).IsRequired();
+        entity.Property(item => item.ExternalMessageId).HasMaxLength(512);
+        entity.Property(item => item.FingerprintSha256).HasMaxLength(64).IsRequired();
+        entity.Property(item => item.Direction).HasConversion<string>().HasMaxLength(50).IsRequired();
+        entity.Property(item => item.Kind).HasConversion<string>().HasMaxLength(50).IsRequired();
+        entity.Property(item => item.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+        entity.Property(item => item.FromName).HasMaxLength(250);
+        entity.Property(item => item.FromAddress).HasMaxLength(320);
+        entity.Property(item => item.ToAddresses).HasMaxLength(2000);
+        entity.Property(item => item.Subject).HasMaxLength(500).IsRequired();
+        entity.Property(item => item.BodyText).HasMaxLength(100_000).IsRequired();
+        entity.Property(item => item.SourceReference).HasMaxLength(2048);
+        entity.HasIndex(item => item.FingerprintSha256).IsUnique();
+        entity.HasIndex(item => new { item.SourceSystem, item.ExternalMessageId });
+        entity.HasIndex(item => item.MessageAtUtc);
+        entity.HasIndex(item => item.Status);
+        entity.HasIndex(item => item.ApplicationId);
+        entity.HasIndex(item => item.OpportunityId);
+        entity.HasIndex(item => item.ContactId);
+        entity.HasIndex(item => item.OrganizationId);
+        entity.HasIndex(item => item.ActivityId);
+        entity.HasOne<Opportunity>().WithMany().HasForeignKey(item => item.OpportunityId).OnDelete(DeleteBehavior.SetNull);
+        entity.HasOne<JobApplication>().WithMany().HasForeignKey(item => item.ApplicationId).OnDelete(DeleteBehavior.SetNull);
+        entity.HasOne<Contact>().WithMany().HasForeignKey(item => item.ContactId).OnDelete(DeleteBehavior.SetNull);
+        entity.HasOne<Organization>().WithMany().HasForeignKey(item => item.OrganizationId).OnDelete(DeleteBehavior.SetNull);
+        entity.HasOne<TrackerActivity>().WithMany().HasForeignKey(item => item.ActivityId).OnDelete(DeleteBehavior.SetNull);
+    }
+
+    private static void ConfigureJobLead(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<JobLead>();
+        entity.ToTable("job_leads");
+        entity.HasKey(item => item.Id);
+        entity.Property(item => item.Id).ValueGeneratedNever();
+        entity.Property(item => item.SourceSystem).HasMaxLength(100).IsRequired();
+        entity.Property(item => item.ExternalJobId).HasMaxLength(250);
+        entity.Property(item => item.FingerprintSha256).HasMaxLength(64).IsRequired();
+        entity.Property(item => item.Title).HasMaxLength(250).IsRequired();
+        entity.Property(item => item.OrganizationName).HasMaxLength(250);
+        entity.Property(item => item.Location).HasMaxLength(250);
+        entity.Property(item => item.RemoteText).HasMaxLength(250);
+        entity.Property(item => item.SalaryText).HasMaxLength(250);
+        entity.Property(item => item.SourceUrl).HasMaxLength(2048);
+        entity.Property(item => item.DescriptionText).HasMaxLength(100_000);
+        entity.Property(item => item.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+        entity.HasIndex(item => item.FingerprintSha256).IsUnique();
+        entity.HasIndex(item => new { item.SourceSystem, item.ExternalJobId });
+        entity.HasIndex(item => item.SourceUrl);
+        entity.HasIndex(item => item.SearchProfileId);
+        entity.HasIndex(item => item.OpportunityId);
+        entity.HasIndex(item => item.Status);
+        entity.HasIndex(item => item.FoundAtUtc);
+        entity.HasOne<SearchProfile>().WithMany().HasForeignKey(item => item.SearchProfileId).OnDelete(DeleteBehavior.SetNull);
+        entity.HasOne<Opportunity>().WithMany().HasForeignKey(item => item.OpportunityId).OnDelete(DeleteBehavior.SetNull);
+    }
+
 }

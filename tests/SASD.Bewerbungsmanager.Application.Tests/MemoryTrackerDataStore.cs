@@ -20,6 +20,8 @@ internal sealed class MemoryTrackerDataStore : ITrackerDataStore
     public List<SearchProfile> SearchProfiles { get; } = [];
     public List<TrackerDocument> Documents { get; } = [];
     public List<ApplicationDocumentSnapshot> ApplicationDocumentSnapshots { get; } = [];
+    public List<CommunicationMessage> CommunicationMessages { get; } = [];
+    public List<JobLead> JobLeads { get; } = [];
 
     public Task<IReadOnlyList<Organization>> ListOrganizationsAsync(bool includeArchived, CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<Organization>>(Organizations.Where(item => includeArchived || !item.IsArchived).ToList());
@@ -169,4 +171,50 @@ internal sealed class MemoryTrackerDataStore : ITrackerDataStore
         ApplicationDocumentSnapshots.Add(snapshot);
         return Task.CompletedTask;
     }
+
+    public Task<IReadOnlyList<CommunicationMessage>> ListCommunicationMessagesAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<CommunicationMessage>>(CommunicationMessages.ToList());
+
+    public Task<CommunicationMessage?> GetCommunicationMessageAsync(Guid id, CancellationToken cancellationToken = default)
+        => Task.FromResult(CommunicationMessages.SingleOrDefault(item => item.Id == id));
+
+    public Task<CommunicationMessage?> FindCommunicationMessageByFingerprintAsync(string fingerprintSha256, CancellationToken cancellationToken = default)
+        => Task.FromResult(CommunicationMessages.SingleOrDefault(item => item.FingerprintSha256 == fingerprintSha256));
+
+    public Task<CommunicationMessage?> FindCommunicationMessageByExternalIdentityAsync(string sourceSystem, string externalMessageId, CancellationToken cancellationToken = default)
+        => Task.FromResult(CommunicationMessages.SingleOrDefault(item => item.SourceSystem == sourceSystem && item.ExternalMessageId == externalMessageId));
+
+    public Task AddCommunicationMessageAsync(CommunicationMessage message, CancellationToken cancellationToken = default)
+    {
+        CommunicationMessages.Add(message);
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateCommunicationMessageAsync(CommunicationMessage message, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
+    public Task<IReadOnlyList<JobLead>> ListJobLeadsAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<JobLead>>(JobLeads.ToList());
+
+    public Task<JobLead?> GetJobLeadAsync(Guid id, CancellationToken cancellationToken = default)
+        => Task.FromResult(JobLeads.SingleOrDefault(item => item.Id == id));
+
+    public Task<JobLead?> FindJobLeadByFingerprintAsync(string fingerprintSha256, CancellationToken cancellationToken = default)
+        => Task.FromResult(JobLeads.SingleOrDefault(item => item.FingerprintSha256 == fingerprintSha256));
+
+    public Task<JobLead?> FindJobLeadByExternalIdentityAsync(string sourceSystem, string externalJobId, CancellationToken cancellationToken = default)
+        => Task.FromResult(JobLeads.FirstOrDefault(item => item.SourceSystem == sourceSystem && item.ExternalJobId == externalJobId));
+
+    public Task<JobLead?> FindJobLeadBySourceUrlAsync(string sourceUrl, CancellationToken cancellationToken = default)
+        => Task.FromResult(JobLeads.FirstOrDefault(item => item.SourceUrl == sourceUrl));
+
+    public Task AddJobLeadAsync(JobLead lead, CancellationToken cancellationToken = default)
+    {
+        JobLeads.Add(lead);
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateJobLeadAsync(JobLead lead, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
 }

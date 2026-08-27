@@ -1,0 +1,14 @@
+using Sasd.FinanceControl.Domain.Entities;
+
+namespace Sasd.FinanceControl.Application.Orders;
+
+public sealed record PurchaseOrderLineRequest(Guid? Id, string ItemName, string? Description, decimal Quantity, string? Unit, decimal UnitPriceNet, decimal TaxRatePercent, Guid? CategoryId, bool AssetCandidate, bool InventoryCandidate);
+public sealed record CreatePurchaseOrderRequest(Guid SupplierId, string? SupplierOrderNumber, DateOnly OrderDate, DateOnly? ExpectedDeliveryDate, PurchaseOrderStatus Status, string CurrencyCode, string? BusinessPurpose, string? Notes, IReadOnlyList<PurchaseOrderLineRequest> Lines);
+public sealed record UpdatePurchaseOrderRequest(Guid Id, Guid SupplierId, string? SupplierOrderNumber, DateOnly OrderDate, DateOnly? ExpectedDeliveryDate, PurchaseOrderStatus Status, string CurrencyCode, string? BusinessPurpose, string? Notes, IReadOnlyList<PurchaseOrderLineRequest> Lines);
+public sealed record PurchaseOrderSearchCriteria(string? SearchText, Guid? SupplierId, PurchaseOrderStatus? Status, bool IncludeClosed);
+public sealed record PurchaseOrderLineDetails(Guid Id, int Position, string ItemName, string? Description, decimal Quantity, string? Unit, decimal UnitPriceNet, decimal TaxRatePercent, Guid? CategoryId, string? CategoryName, bool AssetCandidate, bool InventoryCandidate, decimal NetAmount, decimal TaxAmount, decimal GrossAmount);
+public sealed record PurchaseOrderDocumentItem(Guid DocumentId, DocumentType DocumentType, string OriginalFileName, DateOnly? DocumentDate, string Sha256Hash);
+public sealed record PurchaseOrderInvoiceLinkItem(Guid Id, Guid InvoiceId, string InvoiceNumber, string? ExternalInvoiceNumber, DateOnly InvoiceDate, decimal GrossAmount, string CurrencyCode, bool IsVoided, DateTimeOffset CreatedAtUtc, DateTimeOffset? VoidedAtUtc, string? VoidReason, string? Note);
+public sealed record PurchaseOrderListItem(Guid Id, string OrderNumber, Guid SupplierId, string SupplierNumber, string SupplierName, string? SupplierOrderNumber, DateOnly OrderDate, DateOnly? ExpectedDeliveryDate, PurchaseOrderStatus Status, string CurrencyCode, string? BusinessPurpose, decimal NetAmount, decimal TaxAmount, decimal GrossAmount, int LineCount);
+public sealed record PurchaseOrderDetails(Guid Id, string OrderNumber, Guid SupplierId, string SupplierNumber, string SupplierName, string? SupplierOrderNumber, DateOnly OrderDate, DateOnly? ExpectedDeliveryDate, PurchaseOrderStatus Status, string CurrencyCode, string? BusinessPurpose, string? Notes, decimal NetAmount, decimal TaxAmount, decimal GrossAmount, IReadOnlyList<PurchaseOrderLineDetails> Lines, IReadOnlyList<PurchaseOrderDocumentItem> Documents, IReadOnlyList<PurchaseOrderInvoiceLinkItem> InvoiceLinks);
+public sealed record LinkOrderInvoiceRequest(Guid OrderId, Guid InvoiceId, string? Note);

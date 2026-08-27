@@ -87,4 +87,43 @@ public static class DisplayText
         SASD.Bewerbungsmanager.Domain.Enums.ActivityStatus.Cancelled => "Abgesagt",
         _ => status.ToString(),
     };
+
+    /// <summary>Returns a user-facing label for communication direction.</summary>
+    public static string CommunicationDirection(CommunicationDirection direction) => direction switch
+    {
+        SASD.Bewerbungsmanager.Domain.Enums.CommunicationDirection.Incoming => "Eingang",
+        SASD.Bewerbungsmanager.Domain.Enums.CommunicationDirection.Outgoing => "Ausgang",
+        _ => direction.ToString(),
+    };
+
+    /// <summary>Returns a user-facing label for communication classification.</summary>
+    public static string CommunicationKind(CommunicationKind kind) => kind switch
+    {
+        SASD.Bewerbungsmanager.Domain.Enums.CommunicationKind.Unclassified => "Unklassifiziert",
+        SASD.Bewerbungsmanager.Domain.Enums.CommunicationKind.Recruiter => "Recruiter / HR",
+        SASD.Bewerbungsmanager.Domain.Enums.CommunicationKind.ApplicationResponse => "Bewerbungsprozess",
+        SASD.Bewerbungsmanager.Domain.Enums.CommunicationKind.JobAlert => "Job-Alert",
+        SASD.Bewerbungsmanager.Domain.Enums.CommunicationKind.General => "Allgemein",
+        _ => kind.ToString(),
+    };
+
+    /// <summary>Returns a user-facing label for communication processing state.</summary>
+    public static string CommunicationStatus(CommunicationStatus status) => status switch
+    {
+        SASD.Bewerbungsmanager.Domain.Enums.CommunicationStatus.Imported => "Importiert",
+        SASD.Bewerbungsmanager.Domain.Enums.CommunicationStatus.Linked => "Zugeordnet",
+        SASD.Bewerbungsmanager.Domain.Enums.CommunicationStatus.Ignored => "Ignoriert",
+        _ => status.ToString(),
+    };
+
+    /// <summary>Returns a user-facing label for a discovered job result.</summary>
+    public static string JobLeadStatus(JobLeadStatus status) => status switch
+    {
+        SASD.Bewerbungsmanager.Domain.Enums.JobLeadStatus.New => "Neu",
+        SASD.Bewerbungsmanager.Domain.Enums.JobLeadStatus.Reviewed => "Geprüft",
+        SASD.Bewerbungsmanager.Domain.Enums.JobLeadStatus.Imported => "Als Stelle übernommen",
+        SASD.Bewerbungsmanager.Domain.Enums.JobLeadStatus.Ignored => "Ignoriert",
+        _ => status.ToString(),
+    };
+
 }

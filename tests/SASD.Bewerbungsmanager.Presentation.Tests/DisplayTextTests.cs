@@ -40,4 +40,22 @@ public sealed class DisplayTextTests
     {
         Assert.Equal(expected, DisplayText.ActivityKind(kind));
     }
+
+    [Theory]
+    [InlineData(CommunicationKind.Recruiter, "Recruiter / HR")]
+    [InlineData(CommunicationKind.ApplicationResponse, "Bewerbungsprozess")]
+    [InlineData(CommunicationKind.JobAlert, "Job-Alert")]
+    public void CommunicationKind_ReturnsGermanLabel(CommunicationKind kind, string expected)
+    {
+        Assert.Equal(expected, DisplayText.CommunicationKind(kind));
+    }
+
+    [Theory]
+    [InlineData(JobLeadStatus.New, "Neu")]
+    [InlineData(JobLeadStatus.Reviewed, "Geprüft")]
+    [InlineData(JobLeadStatus.Imported, "Als Stelle übernommen")]
+    [InlineData(JobLeadStatus.Ignored, "Ignoriert")]
+    public void JobLeadStatus_ReturnsGermanLabel(JobLeadStatus status, string expected)
+        => Assert.Equal(expected, DisplayText.JobLeadStatus(status));
+
 }

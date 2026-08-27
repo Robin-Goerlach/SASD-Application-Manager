@@ -8,22 +8,24 @@ Local-first Windows-Desktopanwendung für die persönliche Arbeitssuche.
 
 ## Aktueller Entwicklungsstand
 
-Diese Lieferung implementiert **v0.2.0 – Nachweise, Export und Austausch** auf Basis des verifizierten
-Operational MVP.
+Diese Lieferung implementiert **v0.4.0 – Jobsuche und Quellenadapter** auf Basis des v0.3.0-Standes.
 
-Neben der täglichen Steuerung von ACTION, WAITING_FOR, Terminen, Suchquellen und Dokumentversionen
-kann der Bewerbungsmanager jetzt:
+Der Bewerbungsmanager kann jetzt zusätzlich:
 
-- Versanddatum und Bewerbungskanal einer vorhandenen Bewerbung gezielt korrigieren,
-- einen **Bewerbungsnachweis für einen frei wählbaren Zeitraum** anzeigen,
-- tatsächlich versendete Bewerbungen als **CSV** exportieren,
-- denselben Nachweis als **PDF** erzeugen,
-- CSV und PDF gemeinsam in einen Zielordner schreiben,
-- für eine konkrete Bewerbung ein **JSON-Austauschdossier** erzeugen,
-- dasselbe Dossier als **Markdown** exportieren,
-- lokale Dokumentpfade und Dokumentinhalte bewusst aus Austauschdateien heraushalten.
+- gefundene Stellen zunächst als eigene **JobLead-Inbox** verwalten, bevor sie Opportunities werden,
+- versionierte JSON-Jobquellen-Handoffs importieren,
+- semikolongetrennte UTF-8-CSV-Handoffs einschließlich gequoteter mehrzeiliger Beschreibungen importieren,
+- einzelne Treffer aus der Windows-Zwischenablage erfassen,
+- importierte Treffer über externe Stellen-ID, kanonisierte URL und SHA-256-Fingerprint deduplizieren,
+- Suchprofile nach erfolgreichem Batchimport automatisch als geprüft markieren,
+- Treffer als geprüft oder ignoriert kennzeichnen,
+- Quell-URLs direkt im Browser öffnen,
+- einen geprüften Treffer bewusst als Opportunity übernehmen und dabei den Beschreibungstext als Snapshot erhalten.
 
-Details: [`docs/MILESTONE-3-EVIDENCE-EXPORT.md`](docs/MILESTONE-3-EVIDENCE-EXPORT.md)
+Der Bewerbungsmanager **scrapt keine Portale selbst**. JSON, CSV und Clipboard bilden eine kleine lokale
+Adaptergrenze, an die spätere portal- oder browsernahe Werkzeuge anschließen können.
+
+Details: [`docs/MILESTONE-5-JOB-SEARCH-ADAPTERS.md`](docs/MILESTONE-5-JOB-SEARCH-ADAPTERS.md)
 
 ## Technische Basis
 
@@ -44,6 +46,8 @@ Heute
 Aufgaben
 Termine
 Verlauf
+Kommunikation
+Jobsuche
 Suchquellen
 Nachweise / Export
 Bewerbungen
@@ -62,6 +66,23 @@ Dokumente
 
 Timeline, Termine, SearchProfiles, Dokumentversionen und „Kontext für ChatGPT kopieren“ bleiben
 Bestandteil des täglichen Workflows.
+
+### Kommunikationsintegration
+
+Die Seite `Kommunikation` importiert lokale Mail-Workbench-Handoffs oder Clipboard-Text. Direkte
+Recruiter-/Bewerbungsnachrichten können automatisch als Timeline-Aktivität erscheinen. Job-Alerts
+werden ohne externe Dienste auf HTTP/HTTPS-Links und einen Titelvorschlag untersucht.
+
+Das Handoff-Format ist versioniert (`schemaVersion = 1`); ein synthetisches Beispiel liegt unter
+[`docs/examples/mail-workbench-handoff-v1.json`](docs/examples/mail-workbench-handoff-v1.json).
+
+### Jobsuche und Quellenadapter
+
+Die neue Seite `Jobsuche` verwaltet normalisierte Suchtreffer getrennt von dauerhaften Opportunities.
+Unterstützt werden JSON-Handoff v1, CSV-Handoff v1 und manuelle Clipboard-Erfassung. Duplikate werden
+deterministisch erkannt; erst die bewusste Aktion **Als Stelle übernehmen** erzeugt eine Opportunity.
+
+Synthetische Beispiele liegen unter `docs/examples/job-source-handoff-v1.json` und `.csv`.
 
 ### Bewerbungsnachweis
 
@@ -122,10 +143,11 @@ Aktuelle Migrationen:
 ```text
 202608260001_InitialMilestone1
 202608260002_OperationalMvp
+202608270003_CommunicationIntegration
+202608270004_JobSearchAdapters
 ```
 
-**v0.2.0 benötigt keine neue Migration.** Die Exportfunktionen sind reine Read-/File-Use-Cases auf
-Basis des bestehenden Datenmodells.
+Beim Start wird die neue JobLead-Tabelle automatisch über EF Core migriert. Bestehende Daten bleiben erhalten.
 
 ## Solution-Struktur
 
@@ -146,11 +168,15 @@ tests/
 
 ## Nächster geplanter Entwicklungsschritt
 
-Gemäß Versionspfad folgt **v0.3.0 – Kommunikationsintegration**. Der konkrete Umfang wird nicht in
-v0.2.0 vorgezogen; insbesondere gibt es hier noch keinen automatischen E-Mail-Import.
+Gemäß Versionspfad folgt nach dem verifizierten v0.4.0-Stand **v0.5.0 – optionale Assistenz/KI**.
+Diese Ausbaustufe bleibt optional; die Kernanwendung und alle v0.4.0-Workflows funktionieren weiterhin
+ohne Cloud- oder KI-Abhängigkeit.
 
 Historie:
 
 - [`docs/MILESTONE-1.md`](docs/MILESTONE-1.md)
 - [`docs/MILESTONE-2-OPERATIONAL-MVP.md`](docs/MILESTONE-2-OPERATIONAL-MVP.md)
 - [`docs/MILESTONE-3-EVIDENCE-EXPORT.md`](docs/MILESTONE-3-EVIDENCE-EXPORT.md)
+- [`docs/MILESTONE-4-COMMUNICATION-INTEGRATION.md`](docs/MILESTONE-4-COMMUNICATION-INTEGRATION.md)
+- [`docs/MILESTONE-5-JOB-SEARCH-ADAPTERS.md`](docs/MILESTONE-5-JOB-SEARCH-ADAPTERS.md)
+- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md)

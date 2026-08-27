@@ -34,6 +34,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<ITrackerDataStore, TrackerDataStore>();
         services.AddSingleton<IDocumentArchive, FileSystemDocumentArchive>();
         services.AddSingleton<IApplicationExportWriter, FileSystemApplicationExportWriter>();
+        services.AddSingleton<ICommunicationHandoffReader, JsonCommunicationHandoffReader>();
+        services.AddSingleton<IJobSourceReader, JsonJobSourceReader>();
+        services.AddSingleton<IJobSourceReader, CsvJobSourceReader>();
         services.AddSingleton<DatabaseInitializer>();
         return services;
     }

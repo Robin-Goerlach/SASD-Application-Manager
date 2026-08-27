@@ -60,4 +60,33 @@ public sealed class OperationalDomainTests
         Assert.Equal(scheduled, activity.OccurredAtUtc);
         Assert.Equal(completed, activity.CompletedAtUtc);
     }
+    [Fact]
+    public void JobLead_LinkOpportunity_ChangesStatusAndStoresRelation()
+    {
+        var now = new DateTimeOffset(2026, 8, 27, 11, 0, 0, TimeSpan.Zero);
+        var opportunityId = Guid.NewGuid();
+        var lead = new JobLead
+        {
+            Id = Guid.NewGuid(),
+            SourceSystem = "Example Portal",
+            FingerprintSha256 = new string('a', 64),
+            Title = "Synthetic Engineer",
+            Status = JobLeadStatus.New,
+        };
+
+        lead.LinkOpportunity(opportunityId, now);
+
+        Assert.Equal(JobLeadStatus.Imported, lead.Status);
+        Assert.Equal(opportunityId, lead.OpportunityId);
+        Assert.Equal(now, lead.UpdatedAtUtc);
+    }
+
+    [Fact]
+    public void JobLead_Imported_CannotBeIgnored()
+    {
+        var lead = new JobLead { Status = JobLeadStatus.Imported, OpportunityId = Guid.NewGuid() };
+
+        Assert.Throws<InvalidOperationException>(() => lead.Ignore(DateTimeOffset.UtcNow));
+    }
+
 }

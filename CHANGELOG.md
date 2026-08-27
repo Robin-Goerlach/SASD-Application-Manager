@@ -1,5 +1,44 @@
 # Changelog
 
+## v0.4.0 – Jobsuche und Quellenadapter
+
+- neue `JobLead`-Inbox zwischen Suchquelle und dauerhafter Opportunity
+- neue Migration `202608270004_JobSearchAdapters` mit lokaler SQLite-Persistenz
+- JSON-Handoff v1 und CSV-Handoff v1 als lokale Quellenadapter
+- manuelle Clipboard-Erfassung für Quellen ohne Adapter
+- deterministische Deduplizierung über externe ID, kanonisierte URL und SHA-256-Fingerprint
+- Suchprofile werden nach erfolgreichem Batchimport als geprüft markiert
+- Status `Neu`, `Geprüft`, `Als Stelle übernommen`, `Ignoriert`
+- bewusste Übernahme eines JobLeads in Opportunity + SourceLink
+- neue WinForms-Navigation `Jobsuche`
+- neue Domain-, Application-, Infrastructure-, Presentation- und Systemtests
+- Beispiele und Upgrade-/Milestone-Dokumentation ergänzt
+
+## 0.3.0 – Kommunikationsintegration (2026-08-27)
+
+### Added
+
+- Added a local, versioned SASD Mail Workbench JSON handoff contract without adding mailbox protocol dependencies.
+- Added `CommunicationMessage` persistence with external-message/fingerprint deduplication and EF migration `202608270003_CommunicationIntegration`.
+- Added conservative automatic sender/contact/context matching that only links unambiguous existing relations.
+- Added automatic timeline activities for recruiter and application-process e-mails.
+- Added deterministic local job-alert classification, URL extraction and title suggestions without external AI services.
+- Added clipboard communication import, user-confirmed context linking, ACTION creation and opportunity creation from communication text.
+- Added the `Kommunikation` WinForms workspace and supporting dialogs.
+- Added domain, application, SQLite, JSON-handoff, system and composition-root regression coverage.
+- Added a synthetic Mail Workbench handoff example and troubleshooting guidance for antivirus-blocked test assemblies.
+
+### Changed
+
+- Updated main navigation/title for v0.3.0.
+- Extended the pragmatic persistence port for normalized communication records.
+- Clarified that runtime EF mappings and frozen migration snapshots intentionally remain separate.
+
+### Database
+
+- Added table `communication_messages`; existing v0.1.x/v0.2.0 data is migrated in place.
+
+
 ## 0.2.0 – Nachweise, Export und Austausch (2026-08-27)
 
 ### Added

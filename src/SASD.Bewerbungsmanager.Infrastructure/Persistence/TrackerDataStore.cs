@@ -402,4 +402,154 @@ public sealed class TrackerDataStore(IDbContextFactory<ApplicationTrackerDbConte
         context.ApplicationDocumentSnapshots.Add(snapshot);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<CommunicationMessage>> ListCommunicationMessagesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var items = await context.CommunicationMessages.AsNoTracking()
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return items
+            .OrderByDescending(item => item.MessageAtUtc)
+            .ThenBy(item => item.Subject)
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<CommunicationMessage?> GetCommunicationMessageAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        return await context.CommunicationMessages.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<CommunicationMessage?> FindCommunicationMessageByFingerprintAsync(
+        string fingerprintSha256,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        return await context.CommunicationMessages.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.FingerprintSha256 == fingerprintSha256, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<CommunicationMessage?> FindCommunicationMessageByExternalIdentityAsync(
+        string sourceSystem,
+        string externalMessageId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        return await context.CommunicationMessages.AsNoTracking()
+            .SingleOrDefaultAsync(
+                item => item.SourceSystem == sourceSystem && item.ExternalMessageId == externalMessageId,
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task AddCommunicationMessageAsync(
+        CommunicationMessage message,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.CommunicationMessages.Add(message);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateCommunicationMessageAsync(
+        CommunicationMessage message,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.CommunicationMessages.Update(message);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<JobLead>> ListJobLeadsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var items = await context.JobLeads.AsNoTracking()
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return items
+            .OrderBy(item => item.Status)
+            .ThenByDescending(item => item.FoundAtUtc)
+            .ThenBy(item => item.Title)
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<JobLead?> GetJobLeadAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        return await context.JobLeads.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<JobLead?> FindJobLeadByFingerprintAsync(
+        string fingerprintSha256,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        return await context.JobLeads.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.FingerprintSha256 == fingerprintSha256, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<JobLead?> FindJobLeadByExternalIdentityAsync(
+        string sourceSystem,
+        string externalJobId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        return await context.JobLeads.AsNoTracking()
+            .FirstOrDefaultAsync(
+                item => item.SourceSystem == sourceSystem && item.ExternalJobId == externalJobId,
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<JobLead?> FindJobLeadBySourceUrlAsync(
+        string sourceUrl,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        return await context.JobLeads.AsNoTracking()
+            .FirstOrDefaultAsync(item => item.SourceUrl == sourceUrl, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task AddJobLeadAsync(JobLead lead, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(lead);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.JobLeads.Add(lead);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateJobLeadAsync(JobLead lead, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(lead);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.JobLeads.Update(lead);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
 }

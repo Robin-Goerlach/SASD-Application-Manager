@@ -23,7 +23,7 @@ partial class ApplicationTrackerModelSnapshot : ModelSnapshot
 {
     /// <inheritdoc />
     protected override void BuildModel(ModelBuilder modelBuilder)
-        => BuildOperationalMvpModel(modelBuilder);
+        => BuildJobSearchModel(modelBuilder);
 
     /// <summary>
     /// Builds the frozen target model of migration 202608260001_InitialMilestone1.
@@ -299,4 +299,101 @@ partial class ApplicationTrackerModelSnapshot : ModelSnapshot
                 .OnDelete(DeleteBehavior.SetNull);
         });
     }
+
+    /// <summary>
+    /// Builds the frozen target model of migration 202608270003_CommunicationIntegration and therefore
+    /// the current v0.3.0 communication-integration schema.
+    /// </summary>
+    /// <param name="modelBuilder">Model builder supplied by EF Core.</param>
+    internal static void BuildCommunicationIntegrationModel(ModelBuilder modelBuilder)
+    {
+        BuildOperationalMvpModel(modelBuilder);
+        modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
+
+        modelBuilder.Entity<CommunicationMessage>(entity =>
+        {
+            entity.ToTable("communication_messages");
+            entity.HasKey(item => item.Id);
+            entity.Property(item => item.Id).HasColumnType("TEXT").ValueGeneratedNever();
+            entity.Property(item => item.SourceSystem).HasColumnType("TEXT").HasMaxLength(100).IsRequired();
+            entity.Property(item => item.ExternalMessageId).HasColumnType("TEXT").HasMaxLength(512);
+            entity.Property(item => item.FingerprintSha256).HasColumnType("TEXT").HasMaxLength(64).IsRequired();
+            entity.Property(item => item.Direction).HasColumnType("TEXT").HasMaxLength(50).HasConversion<string>().IsRequired();
+            entity.Property(item => item.Kind).HasColumnType("TEXT").HasMaxLength(50).HasConversion<string>().IsRequired();
+            entity.Property(item => item.Status).HasColumnType("TEXT").HasMaxLength(50).HasConversion<string>().IsRequired();
+            entity.Property(item => item.FromName).HasColumnType("TEXT").HasMaxLength(250);
+            entity.Property(item => item.FromAddress).HasColumnType("TEXT").HasMaxLength(320);
+            entity.Property(item => item.ToAddresses).HasColumnType("TEXT").HasMaxLength(2000);
+            entity.Property(item => item.Subject).HasColumnType("TEXT").HasMaxLength(500).IsRequired();
+            entity.Property(item => item.BodyText).HasColumnType("TEXT").HasMaxLength(100000).IsRequired();
+            entity.Property(item => item.MessageAtUtc).HasColumnType("TEXT");
+            entity.Property(item => item.SourceReference).HasColumnType("TEXT").HasMaxLength(2048);
+            entity.Property(item => item.OpportunityId).HasColumnType("TEXT");
+            entity.Property(item => item.ApplicationId).HasColumnType("TEXT");
+            entity.Property(item => item.ContactId).HasColumnType("TEXT");
+            entity.Property(item => item.OrganizationId).HasColumnType("TEXT");
+            entity.Property(item => item.ActivityId).HasColumnType("TEXT");
+            entity.Property(item => item.ImportedAtUtc).HasColumnType("TEXT");
+            entity.Property(item => item.UpdatedAtUtc).HasColumnType("TEXT");
+            entity.HasIndex(item => item.ActivityId);
+            entity.HasIndex(item => item.ApplicationId);
+            entity.HasIndex(item => item.ContactId);
+            entity.HasIndex(item => item.FingerprintSha256).IsUnique();
+            entity.HasIndex(item => item.MessageAtUtc);
+            entity.HasIndex(item => item.OpportunityId);
+            entity.HasIndex(item => item.OrganizationId);
+            entity.HasIndex(item => new { item.SourceSystem, item.ExternalMessageId });
+            entity.HasIndex(item => item.Status);
+            entity.HasOne<TrackerActivity>().WithMany().HasForeignKey(item => item.ActivityId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne<JobApplication>().WithMany().HasForeignKey(item => item.ApplicationId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne<Contact>().WithMany().HasForeignKey(item => item.ContactId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne<Opportunity>().WithMany().HasForeignKey(item => item.OpportunityId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne<Organization>().WithMany().HasForeignKey(item => item.OrganizationId).OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    /// <summary>
+    /// Builds the frozen target model of migration 202608270004_JobSearchAdapters and therefore
+    /// the current v0.4.0 job-search schema.
+    /// </summary>
+    /// <param name="modelBuilder">Model builder supplied by EF Core.</param>
+    internal static void BuildJobSearchModel(ModelBuilder modelBuilder)
+    {
+        BuildCommunicationIntegrationModel(modelBuilder);
+        modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
+
+        modelBuilder.Entity<JobLead>(entity =>
+        {
+            entity.ToTable("job_leads");
+            entity.HasKey(item => item.Id);
+            entity.Property(item => item.Id).HasColumnType("TEXT").ValueGeneratedNever();
+            entity.Property(item => item.SearchProfileId).HasColumnType("TEXT");
+            entity.Property(item => item.SourceSystem).HasColumnType("TEXT").HasMaxLength(100).IsRequired();
+            entity.Property(item => item.ExternalJobId).HasColumnType("TEXT").HasMaxLength(250);
+            entity.Property(item => item.FingerprintSha256).HasColumnType("TEXT").HasMaxLength(64).IsRequired();
+            entity.Property(item => item.Title).HasColumnType("TEXT").HasMaxLength(250).IsRequired();
+            entity.Property(item => item.OrganizationName).HasColumnType("TEXT").HasMaxLength(250);
+            entity.Property(item => item.Location).HasColumnType("TEXT").HasMaxLength(250);
+            entity.Property(item => item.RemoteText).HasColumnType("TEXT").HasMaxLength(250);
+            entity.Property(item => item.SalaryText).HasColumnType("TEXT").HasMaxLength(250);
+            entity.Property(item => item.SourceUrl).HasColumnType("TEXT").HasMaxLength(2048);
+            entity.Property(item => item.DescriptionText).HasColumnType("TEXT").HasMaxLength(100000);
+            entity.Property(item => item.PublishedAtUtc).HasColumnType("TEXT");
+            entity.Property(item => item.FoundAtUtc).HasColumnType("TEXT");
+            entity.Property(item => item.Status).HasColumnType("TEXT").HasMaxLength(50).HasConversion<string>().IsRequired();
+            entity.Property(item => item.OpportunityId).HasColumnType("TEXT");
+            entity.Property(item => item.CreatedAtUtc).HasColumnType("TEXT");
+            entity.Property(item => item.UpdatedAtUtc).HasColumnType("TEXT");
+            entity.HasIndex(item => item.FingerprintSha256).IsUnique();
+            entity.HasIndex(item => item.FoundAtUtc);
+            entity.HasIndex(item => item.OpportunityId);
+            entity.HasIndex(item => item.SearchProfileId);
+            entity.HasIndex(item => new { item.SourceSystem, item.ExternalJobId });
+            entity.HasIndex(item => item.SourceUrl);
+            entity.HasIndex(item => item.Status);
+            entity.HasOne<Opportunity>().WithMany().HasForeignKey(item => item.OpportunityId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne<SearchProfile>().WithMany().HasForeignKey(item => item.SearchProfileId).OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
 }

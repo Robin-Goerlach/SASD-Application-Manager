@@ -1,5 +1,7 @@
 # AGENTS.md
 
+Aktueller Entwicklungsstand: **v0.4.0 – Jobsuche und Quellenadapter**. Jobportalzugriffe bleiben außerhalb des Kerns; JSON/CSV/Clipboard liefern normalisierte JobLeads.
+
 ## Purpose
 
 This repository implements the SASD Bewerbungsmanager / SASD Application Tracker.
