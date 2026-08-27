@@ -12,5 +12,5 @@ partial class OperationalMvp
 {
     /// <inheritdoc />
     protected override void BuildTargetModel(ModelBuilder modelBuilder)
-        => ApplicationTrackerModelSnapshot.BuildCurrentModel(modelBuilder);
+        => ApplicationTrackerModelSnapshot.BuildOperationalMvpModel(modelBuilder);
 }

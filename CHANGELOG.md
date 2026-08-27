@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.0 hotfix - migration snapshot consistency
+
+- Fixed EF Core `PendingModelChangesWarning` caused by reusing runtime model configuration inside the migration snapshot.
+- Restored explicit SQLite column types in migration metadata so runtime and snapshot models compare identically.
+- Froze the Milestone 1 and Operational MVP target models separately, preventing historical migration metadata from drifting when the current model changes.
+
 ## 0.1.0 – Operational MVP (2026-08-26)
 
 ### Added

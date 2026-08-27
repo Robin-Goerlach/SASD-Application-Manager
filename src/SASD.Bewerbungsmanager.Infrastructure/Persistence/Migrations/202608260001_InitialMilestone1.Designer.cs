@@ -12,8 +12,5 @@ partial class InitialMilestone1
 {
     /// <inheritdoc />
     protected override void BuildTargetModel(ModelBuilder modelBuilder)
-    {
-        modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
-        ApplicationTrackerModelSnapshot.BuildCurrentModel(modelBuilder);
-    }
+        => ApplicationTrackerModelSnapshot.BuildMilestone1Model(modelBuilder);
 }
