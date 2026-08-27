@@ -31,6 +31,7 @@ public interface ITrackerDataStore
     Task<IReadOnlyList<JobApplication>> ListApplicationsAsync(CancellationToken cancellationToken = default);
     Task<JobApplication?> GetApplicationAsync(Guid id, CancellationToken cancellationToken = default);
     Task AddApplicationAsync(JobApplication application, CancellationToken cancellationToken = default);
+    Task UpdateApplicationSubmissionAsync(Guid applicationId, DateTimeOffset? submittedAtUtc, ApplicationChannel channel, DateTimeOffset updatedAtUtc, CancellationToken cancellationToken = default);
     Task ChangeApplicationStageAsync(Guid applicationId, ApplicationStage stage, DateTimeOffset changedAtUtc, string? note, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Activity>> ListActivitiesAsync(CancellationToken cancellationToken = default);

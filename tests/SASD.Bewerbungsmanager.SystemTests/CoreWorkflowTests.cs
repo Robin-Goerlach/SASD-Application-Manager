@@ -53,6 +53,9 @@ public sealed class CoreWorkflowTests
                 "65–70 k€"));
 
             await applications.ChangeStageAsync(application.Id, ApplicationStage.Submitted, "Unterlagen versendet");
+            await applications.UpdateSubmissionAsync(
+                application.Id,
+                new ApplicationSubmissionInput(clock.UtcNow, ApplicationChannel.Email));
 
             await workItems.CreateAsync(new WorkItemInput(
                 opportunity.Id,
@@ -110,6 +113,17 @@ public sealed class CoreWorkflowTests
             var contextText = await new ApplicationContextService(store, clock).BuildAsync(application.Id);
             Assert.Contains("Interview vorbereiten", contextText, StringComparison.Ordinal);
             Assert.Contains("Rückmeldung zum Termin", contextText, StringComparison.Ordinal);
+
+            // v0.2.0 regression: the same real SQLite graph must be usable for evidence and
+            // exchange projections without introducing another schema migration.
+            var localSubmissionDate = DateOnly.FromDateTime(clock.UtcNow.ToLocalTime().DateTime);
+            var evidence = await new ApplicationEvidenceService(store, clock).BuildAsync(localSubmissionDate, localSubmissionDate);
+            var evidenceItem = Assert.Single(evidence.Items);
+            Assert.Equal("System Engineer Linux", evidenceItem.Position);
+
+            var dossier = await new ApplicationDossierService(store, clock).BuildAsync(application.Id);
+            Assert.Equal("System Engineer Linux", dossier.Position);
+            Assert.Single(dossier.Tasks, item => item.Status == WorkItemStatus.Open && item.Kind == WorkItemKind.Action);
 
             var persisted = await store.GetApplicationAsync(application.Id);
 

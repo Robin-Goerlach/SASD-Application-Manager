@@ -4,7 +4,7 @@ using SASD.Bewerbungsmanager.WinForms.Controls;
 namespace SASD.Bewerbungsmanager.WinForms.Forms;
 
 /// <summary>
-/// Main application shell for the Operational MVP. Navigation follows a classic Windows business
+/// Main application shell for the current desktop product. Navigation follows a classic Windows business
 /// application pattern and keeps the frequently used operational areas one click away.
 /// </summary>
 public sealed class MainForm : Form
@@ -17,7 +17,7 @@ public sealed class MainForm : Form
     public MainForm(IServiceProvider services)
     {
         _services = services;
-        Text = "SASD Bewerbungsmanager — v0.1.0 Operational MVP";
+        Text = "SASD Bewerbungsmanager — v0.2.0 Nachweise & Export";
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(1150, 720);
         Size = new Size(1320, 840);
@@ -55,6 +55,7 @@ public sealed class MainForm : Form
         navigation.Controls.Add(NavButton("Termine", () => ShowView<AppointmentsControl>()));
         navigation.Controls.Add(NavButton("Verlauf", () => ShowView<ActivitiesControl>()));
         navigation.Controls.Add(NavButton("Suchquellen", () => ShowView<SearchProfilesControl>()));
+        navigation.Controls.Add(NavButton("Nachweise / Export", () => ShowView<EvidenceExportControl>()));
         navigation.Controls.Add(NavButton("Bewerbungen", () => ShowView<ApplicationsControl>()));
         navigation.Controls.Add(NavButton("Stellen", () => ShowView<OpportunitiesControl>()));
         navigation.Controls.Add(NavButton("Kontakte", () => ShowView<ContactsControl>()));

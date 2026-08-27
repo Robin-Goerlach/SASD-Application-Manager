@@ -35,6 +35,9 @@ public sealed record ApplicationInput(
     ApplicationChannel Channel,
     string? SalaryExpectation);
 
+/// <summary>Input used to correct or add the actual submission metadata of an application.</summary>
+public sealed record ApplicationSubmissionInput(DateTimeOffset? SubmittedAtUtc, ApplicationChannel Channel);
+
 /// <summary>Input used to create an activity or appointment.</summary>
 public sealed record ActivityInput(
     Guid? OpportunityId,

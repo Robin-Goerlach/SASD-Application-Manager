@@ -9,7 +9,7 @@ using OperationalMainForm = SASD.Bewerbungsmanager.WinForms.Forms.MainForm;
 
 namespace SASD.Bewerbungsmanager.Presentation.Tests;
 
-/// <summary>Guards the real Operational-MVP WinForms composition root and view dependencies.</summary>
+/// <summary>Guards the real WinForms composition root and current view dependencies.</summary>
 public sealed class MainShellTests
 {
     [Fact]
@@ -38,6 +38,7 @@ public sealed class MainShellTests
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(ActivitiesControl));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(SearchProfilesControl));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(DocumentsControl));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(EvidenceExportControl));
 
         // This validates constructor dependencies for every registered service without opening a
         // window on the xUnit worker thread. It protects against the class of startup/DI errors

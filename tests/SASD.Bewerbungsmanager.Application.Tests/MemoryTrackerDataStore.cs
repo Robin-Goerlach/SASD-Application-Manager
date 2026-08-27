@@ -84,6 +84,20 @@ internal sealed class MemoryTrackerDataStore : ITrackerDataStore
         return Task.CompletedTask;
     }
 
+    public Task UpdateApplicationSubmissionAsync(
+        Guid applicationId,
+        DateTimeOffset? submittedAtUtc,
+        ApplicationChannel channel,
+        DateTimeOffset updatedAtUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var application = Applications.Single(item => item.Id == applicationId);
+        application.SubmittedAtUtc = submittedAtUtc;
+        application.Channel = channel;
+        application.UpdatedAtUtc = updatedAtUtc;
+        return Task.CompletedTask;
+    }
+
     public Task ChangeApplicationStageAsync(Guid applicationId, ApplicationStage stage, DateTimeOffset changedAtUtc, string? note, CancellationToken cancellationToken = default)
     {
         Applications.Single(item => item.Id == applicationId).ChangeStage(stage, changedAtUtc, note);

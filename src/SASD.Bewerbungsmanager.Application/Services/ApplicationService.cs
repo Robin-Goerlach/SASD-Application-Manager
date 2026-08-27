@@ -46,6 +46,30 @@ public sealed class ApplicationService(ITrackerDataStore store, IClock clock)
     }
 
     /// <summary>
+    /// Updates the factual submission timestamp and channel used for evidence/export. A nullable
+    /// timestamp allows a mistakenly entered submission to be cleared deliberately.
+    /// </summary>
+    public async Task UpdateSubmissionAsync(
+        Guid applicationId,
+        ApplicationSubmissionInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var application = await store.GetApplicationAsync(applicationId, cancellationToken).ConfigureAwait(false)
+            ?? throw new KeyNotFoundException("Die Bewerbung wurde nicht gefunden.");
+        if (input.SubmittedAtUtc is not null && input.SubmittedAtUtc < application.StartedAtUtc)
+        {
+            throw new ValidationException("Das Versanddatum darf nicht vor dem Start der Bewerbung liegen.");
+        }
+
+        await store.UpdateApplicationSubmissionAsync(
+            applicationId,
+            input.SubmittedAtUtc,
+            input.Channel,
+            clock.UtcNow,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Changes the application stage in one persistence operation so the current state and history
     /// entry cannot drift apart because of two separate saves.
     /// </summary>

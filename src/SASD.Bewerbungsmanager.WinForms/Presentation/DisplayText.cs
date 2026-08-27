@@ -33,6 +33,19 @@ public static class DisplayText
         _ => stage.ToString(),
     };
 
+
+    /// <summary>Returns a user-facing label for an application submission channel.</summary>
+    public static string ApplicationChannel(ApplicationChannel channel) => channel switch
+    {
+        SASD.Bewerbungsmanager.Domain.Enums.ApplicationChannel.Unknown => "Unbekannt",
+        SASD.Bewerbungsmanager.Domain.Enums.ApplicationChannel.Portal => "Portal",
+        SASD.Bewerbungsmanager.Domain.Enums.ApplicationChannel.Email => "E-Mail",
+        SASD.Bewerbungsmanager.Domain.Enums.ApplicationChannel.LinkedIn => "LinkedIn",
+        SASD.Bewerbungsmanager.Domain.Enums.ApplicationChannel.Recruiter => "Recruiter",
+        SASD.Bewerbungsmanager.Domain.Enums.ApplicationChannel.Other => "Sonstiges",
+        _ => channel.ToString(),
+    };
+
     /// <summary>Returns a user-facing label for an operational work-item kind.</summary>
     public static string WorkItemKind(WorkItemKind kind) => kind switch
     {

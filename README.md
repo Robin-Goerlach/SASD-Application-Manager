@@ -8,22 +8,22 @@ Local-first Windows-Desktopanwendung für die persönliche Arbeitssuche.
 
 ## Aktueller Entwicklungsstand
 
-Diese Lieferung implementiert das **Operational MVP / v0.1.0** auf Basis des zuvor verifizierten
-Milestone-1-Kerns.
+Diese Lieferung implementiert **v0.2.0 – Nachweise, Export und Austausch** auf Basis des verifizierten
+Operational MVP.
 
-Der Bewerbungsmanager kann damit neben Organisationen, Kontakten, Stellen und Bewerbungen nun auch
-die tägliche operative Arbeit steuern:
+Neben der täglichen Steuerung von ACTION, WAITING_FOR, Terminen, Suchquellen und Dokumentversionen
+kann der Bewerbungsmanager jetzt:
 
-- **Heute-Cockpit** mit überfälligen und aktuellen ACTIONs
-- **WAITING_FOR** als eigener, sichtbarer nächster Schritt
-- **Activity / Timeline** für Kommunikation, Notizen und Verlauf
-- **Termine** einschließlich Interviews, Meetings und Behördenterminen
-- **SearchProfiles** für regelmäßig manuell geprüfte Jobsuchen
-- **Dokumentkatalog** mit SHA-256-Fingerprints
-- **unveränderliche Dokument-Snapshots pro Bewerbung**
-- **„Kontext für ChatGPT kopieren“** ohne KI-Aufruf innerhalb der Anwendung
+- Versanddatum und Bewerbungskanal einer vorhandenen Bewerbung gezielt korrigieren,
+- einen **Bewerbungsnachweis für einen frei wählbaren Zeitraum** anzeigen,
+- tatsächlich versendete Bewerbungen als **CSV** exportieren,
+- denselben Nachweis als **PDF** erzeugen,
+- CSV und PDF gemeinsam in einen Zielordner schreiben,
+- für eine konkrete Bewerbung ein **JSON-Austauschdossier** erzeugen,
+- dasselbe Dossier als **Markdown** exportieren,
+- lokale Dokumentpfade und Dokumentinhalte bewusst aus Austauschdateien heraushalten.
 
-Details des Milestones: [`docs/MILESTONE-2-OPERATIONAL-MVP.md`](docs/MILESTONE-2-OPERATIONAL-MVP.md)
+Details: [`docs/MILESTONE-3-EVIDENCE-EXPORT.md`](docs/MILESTONE-3-EVIDENCE-EXPORT.md)
 
 ## Technische Basis
 
@@ -32,10 +32,10 @@ Details des Milestones: [`docs/MILESTONE-2-OPERATIONAL-MVP.md`](docs/MILESTONE-2
 - modularer Monolith
 - SQLite
 - Entity Framework Core 10
-- Generic Host
-- Dependency Injection
+- Generic Host / Dependency Injection
 - kurzlebige DbContexts über `IDbContextFactory<ApplicationTrackerDbContext>`
 - lokale Datenhaltung ohne Cloudpflicht
+- keine zusätzliche PDF-Bibliothek für den kompakten Nachweis
 
 ## Fachliche Bereiche
 
@@ -45,6 +45,7 @@ Aufgaben
 Termine
 Verlauf
 Suchquellen
+Nachweise / Export
 Bewerbungen
 Stellen
 Kontakte
@@ -52,32 +53,30 @@ Organisationen
 Dokumente
 ```
 
-### ACTION und WAITING_FOR
+### Operational MVP
 
-`TrackerTask` trennt bewusst zwei Verantwortlichkeiten:
+`TrackerTask` trennt weiterhin bewusst:
 
 - `ACTION`: Ich muss selbst etwas tun.
 - `WAITING_FOR`: Ich warte auf eine andere Person oder Organisation.
 
-Diese Trennung ist zentral für das Heute-Cockpit.
+Timeline, Termine, SearchProfiles, Dokumentversionen und „Kontext für ChatGPT kopieren“ bleiben
+Bestandteil des täglichen Workflows.
 
-### Dokumentversionen
+### Bewerbungsnachweis
 
-Beim Registrieren einer Datei werden Pfad, Größe und SHA-256 erfasst. Erst wenn die konkrete
-Version tatsächlich einer Bewerbung zugeordnet wird, prüft die Anwendung den Hash erneut und legt
-eine private lokale Kopie ab.
+Der Nachweis verwendet ausschließlich Bewerbungen mit gesetztem `SubmittedAtUtc`. Damit werden
+Entwürfe nicht versehentlich als tatsächlich versendete Bewerbungen ausgegeben.
 
-```text
-%LOCALAPPDATA%\SASD GmbH\SASD Bewerbungsmanager\Documents\<ApplicationId>\
-```
+CSV wird als UTF-8 mit BOM und Semikolon-Trennung erzeugt. Die PDF-Ausgabe ist ein kompakter,
+mehrseitiger A4-Nachweis. Beide Formate basieren auf demselben Application-ReadModel.
 
-Damit bleibt nachvollziehbar, welche Datei wirklich verwendet wurde.
+### Austauschdossier
 
-### Kontext für ChatGPT
+JSON und Markdown enthalten den gespeicherten Bewerbungszusammenhang einschließlich Stelle,
+Organisationen, Quellen, Kontakten, Verlauf, Aufgaben und verwendeten Dokumentmetadaten.
 
-Der Bewerbungsmanager erzeugt einen strukturierten lokalen Text aus Position, Organisation,
-Kontakten, Verlauf, offenen Aufgaben, WAITING_FOR, Dokumentversionen und nächstem Termin und kopiert
-ihm in die Windows-Zwischenablage. Es findet **kein automatischer KI-Aufruf** statt.
+Lokale absolute Dateipfade und Dokumentinhalte werden absichtlich nicht exportiert.
 
 ## Voraussetzungen
 
@@ -94,47 +93,29 @@ dotnet build .\SASD.Bewerbungsmanager.sln -c Release --no-restore
 dotnet test .\SASD.Bewerbungsmanager.sln -c Release --no-build
 ```
 
-Alternativ unter Windows:
-
-```text
-build.cmd
-test.cmd
-```
-
 ## Starten
 
 ```powershell
 dotnet run --project .\src\SASD.Bewerbungsmanager.WinForms\SASD.Bewerbungsmanager.WinForms.csproj
 ```
 
-Beim Start führt `DatabaseInitializer` ausstehende EF-Core-Migrationen automatisch aus. Die
-bestehende Milestone-1-Datenbank muss für v0.1.0 **nicht gelöscht** werden.
-
 ## Lokale Daten
 
-Die produktive SQLite-Datei liegt standardmäßig außerhalb des Repositorys:
+Die produktive SQLite-Datei liegt außerhalb des Repositorys:
 
 ```text
 %LOCALAPPDATA%\SASD GmbH\SASD Bewerbungsmanager\application-tracker.db
 ```
 
-Runtime-Diagnosen werden lokal geschrieben nach:
+Runtime-Diagnosen:
 
 ```text
 %LOCALAPPDATA%\SASD GmbH\SASD Bewerbungsmanager\Logs\application.log
 ```
 
-Persönliche Dokument-Snapshots liegen ebenfalls unter `%LOCALAPPDATA%` und gehören nicht in Git.
+Private Dokument-Snapshots liegen ebenfalls unter `%LOCALAPPDATA%` und gehören nicht in Git.
 
-## EF-Core-Migrationen weiterentwickeln
-
-Die Infrastructure-Schicht enthält eine Design-Time-Factory:
-
-```powershell
-dotnet ef migrations add <Name> `
-  --project .\src\SASD.Bewerbungsmanager.Infrastructure `
-  --startup-project .\src\SASD.Bewerbungsmanager.WinForms
-```
+## Migrationen
 
 Aktuelle Migrationen:
 
@@ -142,6 +123,9 @@ Aktuelle Migrationen:
 202608260001_InitialMilestone1
 202608260002_OperationalMvp
 ```
+
+**v0.2.0 benötigt keine neue Migration.** Die Exportfunktionen sind reine Read-/File-Use-Cases auf
+Basis des bestehenden Datenmodells.
 
 ## Solution-Struktur
 
@@ -162,14 +146,11 @@ tests/
 
 ## Nächster geplanter Entwicklungsschritt
 
-Nach einer kurzen realen Nutzung von v0.1.0 folgt gemäß Versionspfad **v0.2.0 – Nachweise, Export
-und Austausch**. Der konkrete Umfang bleibt eine Strategieentscheidung und wird nicht in diesen
-Milestone vorgezogen.
+Gemäß Versionspfad folgt **v0.3.0 – Kommunikationsintegration**. Der konkrete Umfang wird nicht in
+v0.2.0 vorgezogen; insbesondere gibt es hier noch keinen automatischen E-Mail-Import.
 
-Historischer Kern: [`docs/MILESTONE-1.md`](docs/MILESTONE-1.md)
+Historie:
 
-## Upgrade aus dem verifizierten Milestone-1-Stand
-
-Bei Repositorys, die während der Hotfix-Runde mehrfach überkopiert wurden, bitte einmal die
-Hinweise in [`docs/UPGRADE-v0.1.0.md`](docs/UPGRADE-v0.1.0.md) beachten. Dort ist insbesondere das
-optionale Entfernen des alten M0-`MainForm`-/`MainShellPresenter`-Gerüsts beschrieben.
+- [`docs/MILESTONE-1.md`](docs/MILESTONE-1.md)
+- [`docs/MILESTONE-2-OPERATIONAL-MVP.md`](docs/MILESTONE-2-OPERATIONAL-MVP.md)
+- [`docs/MILESTONE-3-EVIDENCE-EXPORT.md`](docs/MILESTONE-3-EVIDENCE-EXPORT.md)

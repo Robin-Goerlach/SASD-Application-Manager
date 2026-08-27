@@ -16,6 +16,15 @@ public sealed class DisplayTextTests
     }
 
     [Theory]
+    [InlineData(ApplicationChannel.Email, "E-Mail")]
+    [InlineData(ApplicationChannel.Portal, "Portal")]
+    [InlineData(ApplicationChannel.Recruiter, "Recruiter")]
+    public void ApplicationChannel_ReturnsGermanLabel(ApplicationChannel channel, string expected)
+    {
+        Assert.Equal(expected, DisplayText.ApplicationChannel(channel));
+    }
+
+    [Theory]
     [InlineData(WorkItemKind.Action, "ACTION")]
     [InlineData(WorkItemKind.WaitingFor, "WAITING_FOR")]
     public void WorkItemKind_ReturnsOperationalLabel(WorkItemKind kind, string expected)

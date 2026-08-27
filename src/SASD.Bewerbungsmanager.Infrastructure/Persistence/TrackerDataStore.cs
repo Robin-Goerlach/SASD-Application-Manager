@@ -185,6 +185,26 @@ public sealed class TrackerDataStore(IDbContextFactory<ApplicationTrackerDbConte
     }
 
     /// <inheritdoc />
+    public async Task UpdateApplicationSubmissionAsync(
+        Guid applicationId,
+        DateTimeOffset? submittedAtUtc,
+        ApplicationChannel channel,
+        DateTimeOffset updatedAtUtc,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var application = await context.Applications
+            .SingleOrDefaultAsync(item => item.Id == applicationId, cancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new KeyNotFoundException("Die Bewerbung wurde nicht gefunden.");
+
+        application.SubmittedAtUtc = submittedAtUtc;
+        application.Channel = channel;
+        application.UpdatedAtUtc = updatedAtUtc;
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task ChangeApplicationStageAsync(
         Guid applicationId,
         ApplicationStage stage,

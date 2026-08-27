@@ -33,6 +33,7 @@ public static class InfrastructureServiceCollectionExtensions
             options.UseSqlite($"Data Source={databasePath};Foreign Keys=True"));
         services.AddSingleton<ITrackerDataStore, TrackerDataStore>();
         services.AddSingleton<IDocumentArchive, FileSystemDocumentArchive>();
+        services.AddSingleton<IApplicationExportWriter, FileSystemApplicationExportWriter>();
         services.AddSingleton<DatabaseInitializer>();
         return services;
     }

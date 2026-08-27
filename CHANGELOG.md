@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.0 – Nachweise, Export und Austausch (2026-08-27)
+
+### Added
+
+- Added period-based application evidence built only from actually submitted applications.
+- Added explicit editing of factual submission date/channel so evidence can be corrected without inferring dates from workflow status changes.
+- Added UTF-8/BOM semicolon CSV export suitable for German spreadsheet workflows.
+- Added compact multi-page A4 PDF evidence export without introducing another PDF framework dependency.
+- Added a versioned privacy-conscious application exchange dossier.
+- Added JSON and Markdown dossier exports that intentionally omit local document paths and file contents.
+- Added the `Nachweise / Export` WinForms workspace with evidence preview and export controls.
+- Added application, infrastructure and presentation regression tests for evidence semantics, file formats and DI composition.
+
+### Changed
+
+- Updated the main window title and navigation for v0.2.0.
+- Added a stable German display label for `ApplicationChannel`.
+
+### Database
+
+- No schema change and no new migration are required for v0.2.0.
+
 ## v0.1.0 hotfix - migration snapshot consistency
 
 - Fixed EF Core `PendingModelChangesWarning` caused by reusing runtime model configuration inside the migration snapshot.

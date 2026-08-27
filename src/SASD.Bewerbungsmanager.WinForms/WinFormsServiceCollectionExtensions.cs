@@ -11,7 +11,7 @@ namespace SASD.Bewerbungsmanager.WinForms;
 /// </summary>
 public static class WinFormsServiceCollectionExtensions
 {
-    /// <summary>Adds the Operational-MVP shell, views, and presentation helpers.</summary>
+    /// <summary>Adds the current desktop shell, views, and presentation helpers.</summary>
     public static IServiceCollection AddWinFormsPresentation(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -24,6 +24,7 @@ public static class WinFormsServiceCollectionExtensions
         services.AddTransient<AppointmentsControl>();
         services.AddTransient<ActivitiesControl>();
         services.AddTransient<SearchProfilesControl>();
+        services.AddTransient<EvidenceExportControl>();
         services.AddTransient<ApplicationsControl>();
         services.AddTransient<OpportunitiesControl>();
         services.AddTransient<ContactsControl>();

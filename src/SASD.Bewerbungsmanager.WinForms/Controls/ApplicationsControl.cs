@@ -6,8 +6,8 @@ using JobApplication = SASD.Bewerbungsmanager.Domain.Entities.Application;
 namespace SASD.Bewerbungsmanager.WinForms.Controls;
 
 /// <summary>
-/// Lists concrete applications and exposes status history, immutable document assignment, and the
-/// manual "context for ChatGPT" handoff without embedding any generative AI in the application.
+/// Lists concrete applications and exposes status history, factual submission metadata, immutable
+/// document assignment, and the manual "context for ChatGPT" handoff without embedded generative AI.
 /// </summary>
 public sealed class ApplicationsControl : UserControl
 {
@@ -47,6 +47,7 @@ public sealed class ApplicationsControl : UserControl
         };
         toolbar.Controls.Add(ControlFactory.ToolbarButton("Neue Bewerbung", async (_, _) => await CreateAsync()));
         toolbar.Controls.Add(ControlFactory.ToolbarButton("Status ändern", async (_, _) => await ChangeStageAsync()));
+        toolbar.Controls.Add(ControlFactory.ToolbarButton("Versanddaten", async (_, _) => await EditSubmissionAsync()));
         toolbar.Controls.Add(ControlFactory.ToolbarButton("Historie", (_, _) => ShowHistory()));
         toolbar.Controls.Add(ControlFactory.ToolbarButton("Dokument zuordnen", async (_, _) => await AttachDocumentAsync()));
         toolbar.Controls.Add(ControlFactory.ToolbarButton("Verwendete Dokumente", async (_, _) => await ShowDocumentsAsync()));
@@ -68,7 +69,7 @@ public sealed class ApplicationsControl : UserControl
                 item.Id,
                 Position = titles.TryGetValue(item.OpportunityId, out var title) ? title : "(Stelle nicht gefunden)",
                 Status = DisplayText.ApplicationStage(item.Stage),
-                Kanal = item.Channel.ToString(),
+                Kanal = DisplayText.ApplicationChannel(item.Channel),
                 Gestartet = item.StartedAtUtc.LocalDateTime.ToShortDateString(),
                 Versendet = item.SubmittedAtUtc?.LocalDateTime.ToShortDateString() ?? string.Empty,
                 Historie = item.StatusHistory.Count,
@@ -121,6 +122,31 @@ public sealed class ApplicationsControl : UserControl
         try
         {
             await _service.ChangeStageAsync(selected.Id, dialog.Stage, dialog.Note);
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            _errors.Show(ex, this);
+        }
+    }
+
+    private async Task EditSubmissionAsync()
+    {
+        var selected = SelectedItem();
+        if (selected is null)
+        {
+            return;
+        }
+
+        using var dialog = new ApplicationSubmissionForm(selected);
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        try
+        {
+            await _service.UpdateSubmissionAsync(selected.Id, dialog.Input);
             await RefreshAsync();
         }
         catch (Exception ex)
