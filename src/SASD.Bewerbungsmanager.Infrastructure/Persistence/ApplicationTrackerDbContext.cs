@@ -52,6 +52,9 @@ public sealed class ApplicationTrackerDbContext(DbContextOptions<ApplicationTrac
     /// <summary>Gets discovered job-source results awaiting review or promotion.</summary>
     public DbSet<JobLead> JobLeads => Set<JobLead>();
 
+    /// <summary>Gets optional assistant handoff sessions and their locally stored responses.</summary>
+    public DbSet<AssistantSession> AssistantSessions => Set<AssistantSession>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => ConfigureCurrentModel(modelBuilder);
@@ -79,6 +82,7 @@ public sealed class ApplicationTrackerDbContext(DbContextOptions<ApplicationTrac
         ConfigureApplicationDocumentSnapshot(modelBuilder);
         ConfigureCommunicationMessage(modelBuilder);
         ConfigureJobLead(modelBuilder);
+        ConfigureAssistantSession(modelBuilder);
     }
 
     private static void ConfigureOrganization(ModelBuilder modelBuilder)
@@ -342,5 +346,29 @@ public sealed class ApplicationTrackerDbContext(DbContextOptions<ApplicationTrac
         entity.HasOne<SearchProfile>().WithMany().HasForeignKey(item => item.SearchProfileId).OnDelete(DeleteBehavior.SetNull);
         entity.HasOne<Opportunity>().WithMany().HasForeignKey(item => item.OpportunityId).OnDelete(DeleteBehavior.SetNull);
     }
+
+
+    private static void ConfigureAssistantSession(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AssistantSession>();
+        entity.ToTable("assistant_sessions");
+        entity.HasKey(item => item.Id);
+        entity.Property(item => item.Id).ValueGeneratedNever();
+        entity.Property(item => item.TaskKind).HasConversion<string>().HasMaxLength(50).IsRequired();
+        entity.Property(item => item.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+        entity.Property(item => item.Title).HasMaxLength(250).IsRequired();
+        entity.Property(item => item.ContextSha256).HasMaxLength(64).IsRequired();
+        entity.Property(item => item.PromptText).HasMaxLength(250_000).IsRequired();
+        entity.Property(item => item.ResponseText).HasMaxLength(250_000);
+        entity.Property(item => item.ProviderLabel).HasMaxLength(100);
+        entity.Property(item => item.AdditionalInstructions).HasMaxLength(4_000);
+        entity.HasIndex(item => item.ApplicationId);
+        entity.HasIndex(item => item.OpportunityId);
+        entity.HasIndex(item => item.Status);
+        entity.HasIndex(item => item.CreatedAtUtc);
+        entity.HasOne<Opportunity>().WithMany().HasForeignKey(item => item.OpportunityId).OnDelete(DeleteBehavior.SetNull);
+        entity.HasOne<JobApplication>().WithMany().HasForeignKey(item => item.ApplicationId).OnDelete(DeleteBehavior.SetNull);
+    }
+
 
 }

@@ -24,6 +24,7 @@ public static class WinFormsServiceCollectionExtensions
         services.AddTransient<AppointmentsControl>();
         services.AddTransient<ActivitiesControl>();
         services.AddTransient<JobLeadsControl>();
+        services.AddTransient<AssistantControl>();
         services.AddTransient<SearchProfilesControl>();
         services.AddTransient<EvidenceExportControl>();
         services.AddTransient<CommunicationsControl>();

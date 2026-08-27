@@ -552,4 +552,44 @@ public sealed class TrackerDataStore(IDbContextFactory<ApplicationTrackerDbConte
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<AssistantSession>> ListAssistantSessionsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var items = await context.AssistantSessions.AsNoTracking()
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return items
+            .OrderByDescending(item => item.CreatedAtUtc)
+            .ThenBy(item => item.Title)
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<AssistantSession?> GetAssistantSessionAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        return await context.AssistantSessions.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == id, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task AddAssistantSessionAsync(AssistantSession session, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.AssistantSessions.Add(session);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateAssistantSessionAsync(AssistantSession session, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        context.AssistantSessions.Update(session);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
 }

@@ -58,4 +58,18 @@ public sealed class DisplayTextTests
     public void JobLeadStatus_ReturnsGermanLabel(JobLeadStatus status, string expected)
         => Assert.Equal(expected, DisplayText.JobLeadStatus(status));
 
+    [Theory]
+    [InlineData(AssistantTaskKind.FitAnalysis, "Passungsanalyse")]
+    [InlineData(AssistantTaskKind.InterviewPreparation, "Interviewvorbereitung")]
+    [InlineData(AssistantTaskKind.RecruiterReply, "Recruiter-Antwort")]
+    public void AssistantTaskKind_ReturnsGermanLabel(AssistantTaskKind kind, string expected)
+        => Assert.Equal(expected, DisplayText.AssistantTaskKind(kind));
+
+    [Theory]
+    [InlineData(AssistantSessionStatus.Prepared, "Vorbereitet")]
+    [InlineData(AssistantSessionStatus.Completed, "Antwort gespeichert")]
+    [InlineData(AssistantSessionStatus.Discarded, "Verworfen")]
+    public void AssistantSessionStatus_ReturnsGermanLabel(AssistantSessionStatus status, string expected)
+        => Assert.Equal(expected, DisplayText.AssistantSessionStatus(status));
+
 }

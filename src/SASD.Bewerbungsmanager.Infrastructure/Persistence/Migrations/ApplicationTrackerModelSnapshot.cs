@@ -23,7 +23,7 @@ partial class ApplicationTrackerModelSnapshot : ModelSnapshot
 {
     /// <inheritdoc />
     protected override void BuildModel(ModelBuilder modelBuilder)
-        => BuildJobSearchModel(modelBuilder);
+        => BuildAssistantWorkspaceModel(modelBuilder);
 
     /// <summary>
     /// Builds the frozen target model of migration 202608260001_InitialMilestone1.
@@ -393,6 +393,43 @@ partial class ApplicationTrackerModelSnapshot : ModelSnapshot
             entity.HasIndex(item => item.Status);
             entity.HasOne<Opportunity>().WithMany().HasForeignKey(item => item.OpportunityId).OnDelete(DeleteBehavior.SetNull);
             entity.HasOne<SearchProfile>().WithMany().HasForeignKey(item => item.SearchProfileId).OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    /// <summary>
+    /// Builds the frozen target model of migration 202608270005_AssistantWorkspace and therefore
+    /// the current v0.5.0 optional-assistant schema.
+    /// </summary>
+    /// <param name="modelBuilder">Model builder supplied by EF Core.</param>
+    internal static void BuildAssistantWorkspaceModel(ModelBuilder modelBuilder)
+    {
+        BuildJobSearchModel(modelBuilder);
+        modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
+
+        modelBuilder.Entity<AssistantSession>(entity =>
+        {
+            entity.ToTable("assistant_sessions");
+            entity.HasKey(item => item.Id);
+            entity.Property(item => item.Id).HasColumnType("TEXT").ValueGeneratedNever();
+            entity.Property(item => item.OpportunityId).HasColumnType("TEXT");
+            entity.Property(item => item.ApplicationId).HasColumnType("TEXT");
+            entity.Property(item => item.TaskKind).HasColumnType("TEXT").HasMaxLength(50).HasConversion<string>().IsRequired();
+            entity.Property(item => item.Status).HasColumnType("TEXT").HasMaxLength(50).HasConversion<string>().IsRequired();
+            entity.Property(item => item.Title).HasColumnType("TEXT").HasMaxLength(250).IsRequired();
+            entity.Property(item => item.ContextSha256).HasColumnType("TEXT").HasMaxLength(64).IsRequired();
+            entity.Property(item => item.PromptText).HasColumnType("TEXT").HasMaxLength(250000).IsRequired();
+            entity.Property(item => item.ResponseText).HasColumnType("TEXT").HasMaxLength(250000);
+            entity.Property(item => item.ProviderLabel).HasColumnType("TEXT").HasMaxLength(100);
+            entity.Property(item => item.AdditionalInstructions).HasColumnType("TEXT").HasMaxLength(4000);
+            entity.Property(item => item.CreatedAtUtc).HasColumnType("TEXT");
+            entity.Property(item => item.CompletedAtUtc).HasColumnType("TEXT");
+            entity.Property(item => item.UpdatedAtUtc).HasColumnType("TEXT");
+            entity.HasIndex(item => item.ApplicationId);
+            entity.HasIndex(item => item.CreatedAtUtc);
+            entity.HasIndex(item => item.OpportunityId);
+            entity.HasIndex(item => item.Status);
+            entity.HasOne<JobApplication>().WithMany().HasForeignKey(item => item.ApplicationId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne<Opportunity>().WithMany().HasForeignKey(item => item.OpportunityId).OnDelete(DeleteBehavior.SetNull);
         });
     }
 

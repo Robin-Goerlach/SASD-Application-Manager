@@ -41,6 +41,7 @@ public sealed class MainShellTests
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(EvidenceExportControl));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(CommunicationsControl));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(JobLeadsControl));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(AssistantControl));
 
         // This validates constructor dependencies for every registered service without opening a
         // window on the xUnit worker thread. It protects against the class of startup/DI errors

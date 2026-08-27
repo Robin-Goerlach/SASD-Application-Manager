@@ -8,24 +8,22 @@ Local-first Windows-Desktopanwendung für die persönliche Arbeitssuche.
 
 ## Aktueller Entwicklungsstand
 
-Diese Lieferung implementiert **v0.4.0 – Jobsuche und Quellenadapter** auf Basis des v0.3.0-Standes.
+Diese Lieferung implementiert **v0.5.0 – Optionale Assistenz** auf Basis des verifizierten v0.4.0-Standes.
 
 Der Bewerbungsmanager kann jetzt zusätzlich:
 
-- gefundene Stellen zunächst als eigene **JobLead-Inbox** verwalten, bevor sie Opportunities werden,
-- versionierte JSON-Jobquellen-Handoffs importieren,
-- semikolongetrennte UTF-8-CSV-Handoffs einschließlich gequoteter mehrzeiliger Beschreibungen importieren,
-- einzelne Treffer aus der Windows-Zwischenablage erfassen,
-- importierte Treffer über externe Stellen-ID, kanonisierte URL und SHA-256-Fingerprint deduplizieren,
-- Suchprofile nach erfolgreichem Batchimport automatisch als geprüft markieren,
-- Treffer als geprüft oder ignoriert kennzeichnen,
-- Quell-URLs direkt im Browser öffnen,
-- einen geprüften Treffer bewusst als Opportunity übernehmen und dabei den Beschreibungstext als Snapshot erhalten.
+- für eine Bewerbung oder Stelle eine **Assistenz-Sitzung** vorbereiten,
+- sechs versionierbare Aufgabenarten verwenden: Passungsanalyse, nächste Schritte, Recruiter-Antwort, Interviewvorbereitung, Stellenanalyse und Bewerbungscheck,
+- den verwendeten fachlichen Kontext per SHA-256 eindeutig referenzieren,
+- fremde Stellen-/Kommunikationstexte im Prompt ausdrücklich als **untrusted source material** abgrenzen,
+- den vollständigen Prompt vor jeder externen Verwendung prüfen und bewusst in die Windows-Zwischenablage kopieren,
+- Antworten aus ChatGPT, einem anderen Cloud-Assistenten oder einem lokalen Modell bewusst zurückkopieren und historisch speichern,
+- Assistenz-Sitzungen abschließen oder verwerfen, ohne Modelloutput automatisch auf fachliche Daten anzuwenden.
 
-Der Bewerbungsmanager **scrapt keine Portale selbst**. JSON, CSV und Clipboard bilden eine kleine lokale
-Adaptergrenze, an die spätere portal- oder browsernahe Werkzeuge anschließen können.
+Es gibt **keine automatische KI-/Cloud-Verbindung**. Die Kernanwendung funktioniert unverändert offline;
+v0.5.0 speichert weder API-Schlüssel noch Tokens und führt keine Provider-HTTP-Aufrufe aus.
 
-Details: [`docs/MILESTONE-5-JOB-SEARCH-ADAPTERS.md`](docs/MILESTONE-5-JOB-SEARCH-ADAPTERS.md)
+Details: [`docs/MILESTONE-6-OPTIONAL-ASSISTANCE.md`](docs/MILESTONE-6-OPTIONAL-ASSISTANCE.md)
 
 ## Technische Basis
 
@@ -48,6 +46,7 @@ Termine
 Verlauf
 Kommunikation
 Jobsuche
+Assistenz
 Suchquellen
 Nachweise / Export
 Bewerbungen
@@ -83,6 +82,14 @@ Unterstützt werden JSON-Handoff v1, CSV-Handoff v1 und manuelle Clipboard-Erfas
 deterministisch erkannt; erst die bewusste Aktion **Als Stelle übernehmen** erzeugt eine Opportunity.
 
 Synthetische Beispiele liegen unter `docs/examples/job-source-handoff-v1.json` und `.csv`.
+
+### Optionale Assistenz
+
+Die Seite `Assistenz` erzeugt lokale, vollständig prüfbare Prompt-Handoffs. Der fachliche Kontext wird
+zwischen klaren Grenzen eingebettet; Stellenanzeigen und Kommunikationsinhalte werden als untrusted
+source material markiert. Erst der Benutzer entscheidet, ob der Prompt über die Zwischenablage an
+einen externen oder lokalen Assistenten übergeben wird. Zurückkopierte Antworten bleiben reiner Text
+und verändern keine Bewerbung, Stelle, Aufgabe oder andere Fachdaten automatisch.
 
 ### Bewerbungsnachweis
 
@@ -168,9 +175,9 @@ tests/
 
 ## Nächster geplanter Entwicklungsschritt
 
-Gemäß Versionspfad folgt nach dem verifizierten v0.4.0-Stand **v0.5.0 – optionale Assistenz/KI**.
-Diese Ausbaustufe bleibt optional; die Kernanwendung und alle v0.4.0-Workflows funktionieren weiterhin
-ohne Cloud- oder KI-Abhängigkeit.
+Gemäß Versionspfad folgt nach dem verifizierten v0.5.0-Stand **v1.0.0 – gehärtete Produktbaseline**.
+Die optionale Assistenz in v0.5.0 bleibt bewusst providerneutral und clipboard-basiert; alle Kernworkflows
+funktionieren weiterhin ohne Cloud- oder KI-Abhängigkeit.
 
 Historie:
 
@@ -179,4 +186,5 @@ Historie:
 - [`docs/MILESTONE-3-EVIDENCE-EXPORT.md`](docs/MILESTONE-3-EVIDENCE-EXPORT.md)
 - [`docs/MILESTONE-4-COMMUNICATION-INTEGRATION.md`](docs/MILESTONE-4-COMMUNICATION-INTEGRATION.md)
 - [`docs/MILESTONE-5-JOB-SEARCH-ADAPTERS.md`](docs/MILESTONE-5-JOB-SEARCH-ADAPTERS.md)
+- [`docs/MILESTONE-6-OPTIONAL-ASSISTANCE.md`](docs/MILESTONE-6-OPTIONAL-ASSISTANCE.md)
 - [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md)

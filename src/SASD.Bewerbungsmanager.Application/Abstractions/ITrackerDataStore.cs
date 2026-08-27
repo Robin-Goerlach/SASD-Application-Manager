@@ -71,4 +71,9 @@ public interface ITrackerDataStore
     Task<JobLead?> FindJobLeadBySourceUrlAsync(string sourceUrl, CancellationToken cancellationToken = default);
     Task AddJobLeadAsync(JobLead lead, CancellationToken cancellationToken = default);
     Task UpdateJobLeadAsync(JobLead lead, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<AssistantSession>> ListAssistantSessionsAsync(CancellationToken cancellationToken = default);
+    Task<AssistantSession?> GetAssistantSessionAsync(Guid id, CancellationToken cancellationToken = default);
+    Task AddAssistantSessionAsync(AssistantSession session, CancellationToken cancellationToken = default);
+    Task UpdateAssistantSessionAsync(AssistantSession session, CancellationToken cancellationToken = default);
 }

@@ -126,4 +126,25 @@ public static class DisplayText
         _ => status.ToString(),
     };
 
+    /// <summary>Returns a user-facing label for an optional assistant task.</summary>
+    public static string AssistantTaskKind(AssistantTaskKind kind) => kind switch
+    {
+        SASD.Bewerbungsmanager.Domain.Enums.AssistantTaskKind.FitAnalysis => "Passungsanalyse",
+        SASD.Bewerbungsmanager.Domain.Enums.AssistantTaskKind.NextSteps => "Nächste Schritte",
+        SASD.Bewerbungsmanager.Domain.Enums.AssistantTaskKind.RecruiterReply => "Recruiter-Antwort",
+        SASD.Bewerbungsmanager.Domain.Enums.AssistantTaskKind.InterviewPreparation => "Interviewvorbereitung",
+        SASD.Bewerbungsmanager.Domain.Enums.AssistantTaskKind.JobPostingSummary => "Stellenanalyse",
+        SASD.Bewerbungsmanager.Domain.Enums.AssistantTaskKind.ApplicationReview => "Bewerbungscheck",
+        _ => kind.ToString(),
+    };
+
+    /// <summary>Returns a user-facing label for the assistant-session lifecycle.</summary>
+    public static string AssistantSessionStatus(AssistantSessionStatus status) => status switch
+    {
+        SASD.Bewerbungsmanager.Domain.Enums.AssistantSessionStatus.Prepared => "Vorbereitet",
+        SASD.Bewerbungsmanager.Domain.Enums.AssistantSessionStatus.Completed => "Antwort gespeichert",
+        SASD.Bewerbungsmanager.Domain.Enums.AssistantSessionStatus.Discarded => "Verworfen",
+        _ => status.ToString(),
+    };
+
 }

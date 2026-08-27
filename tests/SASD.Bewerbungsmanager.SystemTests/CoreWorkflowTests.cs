@@ -161,6 +161,23 @@ public sealed class CoreWorkflowTests
             Assert.Contains("Interview vorbereiten", contextText, StringComparison.Ordinal);
             Assert.Contains("Rückmeldung zum Termin", contextText, StringComparison.Ordinal);
 
+            // v0.5.0 regression: the optional assistant workflow prepares a guarded local prompt and
+            // persists a deliberately pasted response without changing the underlying application.
+            var assistantContext = new ApplicationContextService(store, clock);
+            var assistant = new AssistantWorkspaceService(store, assistantContext, clock);
+            var assistantSession = await assistant.PrepareAsync(new AssistantPreparationInput(
+                opportunity.Id,
+                application.Id,
+                AssistantTaskKind.InterviewPreparation,
+                "Synthetic additional instruction."));
+            Assert.Contains("BEGIN CONTEXT", assistantSession.PromptText, StringComparison.Ordinal);
+            await assistant.CompleteAsync(assistantSession.Id, new AssistantCompletionInput(
+                "Synthetic assistant response.",
+                "Example Assistant"));
+            var persistedAssistantSession = Assert.Single(await store.ListAssistantSessionsAsync());
+            Assert.Equal(AssistantSessionStatus.Completed, persistedAssistantSession.Status);
+            Assert.Equal("Synthetic assistant response.", persistedAssistantSession.ResponseText);
+
             // v0.2.0 regression: the same real SQLite graph must be usable for evidence and
             // exchange projections without introducing another schema migration.
             var localSubmissionDate = DateOnly.FromDateTime(clock.UtcNow.ToLocalTime().DateTime);

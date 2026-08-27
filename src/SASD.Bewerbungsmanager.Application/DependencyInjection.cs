@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddTransient<ApplicationDossierService>();
         services.AddTransient<CommunicationImportService>();
         services.AddTransient<JobLeadService>();
+        services.AddTransient<AssistantWorkspaceService>();
         return services;
     }
 }

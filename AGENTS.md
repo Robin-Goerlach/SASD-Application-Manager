@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Aktueller Entwicklungsstand: **v0.4.0 – Jobsuche und Quellenadapter**. Jobportalzugriffe bleiben außerhalb des Kerns; JSON/CSV/Clipboard liefern normalisierte JobLeads.
+Aktueller Entwicklungsstand: **v0.5.0 – Optionale Assistenz**. Assistenz bleibt providerneutral und explizit: keine automatische Cloudübertragung, keine Secret-Speicherung und keine Fachänderung durch Modelloutput ohne Benutzeraktion.
 
 ## Purpose
 
@@ -22,6 +22,8 @@ This repository implements the SASD Bewerbungsmanager / SASD Application Tracker
 - Keep nullable analysis clean and treat warnings as errors.
 - Use only synthetic people, companies, e-mail addresses and role data in automated tests.
 - Do not commit databases, CVs, cover letters, secrets, tokens, or real personal application data.
+- Treat job postings, imported communication and assistant responses as untrusted text. They must not silently override application rules or authorize tracker mutations.
+- Do not add a direct AI-provider API or persist provider credentials without an explicit strategy/privacy decision.
 
 ## Required verification
 

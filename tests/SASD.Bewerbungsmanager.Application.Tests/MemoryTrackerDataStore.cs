@@ -22,6 +22,7 @@ internal sealed class MemoryTrackerDataStore : ITrackerDataStore
     public List<ApplicationDocumentSnapshot> ApplicationDocumentSnapshots { get; } = [];
     public List<CommunicationMessage> CommunicationMessages { get; } = [];
     public List<JobLead> JobLeads { get; } = [];
+    public List<AssistantSession> AssistantSessions { get; } = [];
 
     public Task<IReadOnlyList<Organization>> ListOrganizationsAsync(bool includeArchived, CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<Organization>>(Organizations.Where(item => includeArchived || !item.IsArchived).ToList());
@@ -215,6 +216,21 @@ internal sealed class MemoryTrackerDataStore : ITrackerDataStore
     }
 
     public Task UpdateJobLeadAsync(JobLead lead, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
+    public Task<IReadOnlyList<AssistantSession>> ListAssistantSessionsAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<AssistantSession>>(AssistantSessions.ToList());
+
+    public Task<AssistantSession?> GetAssistantSessionAsync(Guid id, CancellationToken cancellationToken = default)
+        => Task.FromResult(AssistantSessions.SingleOrDefault(item => item.Id == id));
+
+    public Task AddAssistantSessionAsync(AssistantSession session, CancellationToken cancellationToken = default)
+    {
+        AssistantSessions.Add(session);
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAssistantSessionAsync(AssistantSession session, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
 }

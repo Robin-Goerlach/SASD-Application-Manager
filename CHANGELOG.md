@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.5.0 – Optional assistance workspace
+
+- Added a local, provider-neutral assistant workspace with persisted, reviewable prompt/response sessions.
+- Added six deterministic task templates for fit analysis, next steps, recruiter replies, interview preparation, job-posting summaries and application review.
+- Added explicit prompt-injection boundaries: captured job and communication text is marked as untrusted source material and cannot redefine the selected task.
+- Added SHA-256 context fingerprints so historical assistant prompts remain reproducible when tracker data changes later.
+- Added clipboard-only handoff by default: no automatic cloud/model HTTP calls, no API keys and no new provider dependency.
+- Added response review/storage while deliberately preventing assistant output from mutating applications, opportunities, tasks or other core data automatically.
+- Added the `assistant_sessions` SQLite table through migration `202608270005_AssistantWorkspace`.
+- Added the WinForms `Assistenz` workspace, provider/status display labels and composition-root registration.
+- Added domain, application, SQLite, presentation and system regression tests for the optional assistant workflow.
+- Added `docs/MILESTONE-6-OPTIONAL-ASSISTANCE.md` and `docs/UPGRADE-v0.5.0.md`.
+
 ## v0.4.0 – Jobsuche und Quellenadapter
 
 - neue `JobLead`-Inbox zwischen Suchquelle und dauerhafter Opportunity
