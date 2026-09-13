@@ -34,5 +34,6 @@ jobs:
       - name: Build
         run: dotnet build SASD.Bewerbungsmanager.sln -c Release --no-restore
 
-      - name: Test
-        run: dotnet test --solution SASD.Bewerbungsmanager.sln -c Release --no-build
+      - name: Test discovery and execution
+        shell: pwsh
+        run: .\scripts\Verify-Tests.ps1 -Configuration Release

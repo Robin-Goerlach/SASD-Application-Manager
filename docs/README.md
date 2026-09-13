@@ -18,12 +18,13 @@
 
 ### Ich will implementieren
 
-1. [PFLICHTENHEFT.md](10-product/PFLICHTENHEFT.md)
-2. [ARCHITECTURE.md](20-architecture/ARCHITECTURE.md)
-3. [DATA-MODEL.md](20-architecture/DATA-MODEL.md)
-4. [DEVELOPMENT-PLAN.md](30-development/DEVELOPMENT-PLAN.md)
-5. [TEST-STRATEGY.md](30-development/TEST-STRATEGY.md)
-6. [AGENTS.md](../AGENTS.md) bei KI-gestützter Entwicklung
+1. [Umsetzungsplan v0.5.1 bis v0.6.0](IMPLEMENTATION-PLAN-v0.5.1-v0.6.0.md)
+2. [PFLICHTENHEFT.md](10-product/PFLICHTENHEFT.md)
+3. [ARCHITECTURE.md](20-architecture/ARCHITECTURE.md)
+4. [DATA-MODEL.md](20-architecture/DATA-MODEL.md)
+5. [DEVELOPMENT-PLAN.md](30-development/DEVELOPMENT-PLAN.md)
+6. [TEST-STRATEGY.md](30-development/TEST-STRATEGY.md)
+7. [AGENTS.md](../AGENTS.md) bei KI-gestützter Entwicklung
 
 ### Ich will Release-/Betriebsfähigkeit prüfen
 
@@ -37,6 +38,7 @@
 
 | Dokument | Rolle | Status |
 |---|---|---|
+| `IMPLEMENTATION-PLAN-v0.5.1-v0.6.0.md` | checkpoint-fähige aktuelle Arbeitsfolge | laufend |
 | `00-project/PROJECT-BRIEF.md` | kompakter Auftrag/Scope | Baseline |
 | `00-project/PROJECT-CLASSIFICATION.md` | Größe, Qualitätsstufe, Profile | vorläufig freigegeben |
 | `00-project/GLOSSARY.md` | verbindliche Fachbegriffe | Baseline |

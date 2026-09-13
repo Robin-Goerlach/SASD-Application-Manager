@@ -30,6 +30,9 @@ This repository implements the SASD Bewerbungsmanager / SASD Application Tracker
 ```powershell
 dotnet restore .\SASD.Bewerbungsmanager.sln
 dotnet build .\SASD.Bewerbungsmanager.sln -c Release --no-restore
-dotnet test .\SASD.Bewerbungsmanager.sln -c Release --no-build
+powershell -ExecutionPolicy Bypass -File .\scripts\Verify-Tests.ps1
 dotnet run --project .\src\SASD.Bewerbungsmanager.WinForms\SASD.Bewerbungsmanager.WinForms.csproj
 ```
+
+Do not treat a solution-level zero exit code as sufficient test evidence. Every test project must
+produce a TRX result with at least one discovered and executed test.

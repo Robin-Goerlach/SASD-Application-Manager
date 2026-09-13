@@ -35,9 +35,7 @@ internal static class Program
 
             InstallGlobalExceptionHandling(host.Services.GetRequiredService<UiExceptionPresenter>());
 
-            // Always resolve the operational form by its explicit alias. Older repository overlays may still
-            // contain the pre-Milestone-1 MainForm in the root namespace; the alias prevents that
-            // obsolete shell from ever winning C# namespace lookup again.
+            // Resolve the operational form explicitly so the composition root remains unambiguous.
             WinFormsApplication.Run(host.Services.GetRequiredService<OperationalMainForm>());
         }
         finally

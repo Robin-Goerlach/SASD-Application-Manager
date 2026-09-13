@@ -118,7 +118,7 @@ Lokale absolute Dateipfade und Dokumentinhalte werden absichtlich nicht exportie
 dotnet clean .\SASD.Bewerbungsmanager.sln
 dotnet restore .\SASD.Bewerbungsmanager.sln
 dotnet build .\SASD.Bewerbungsmanager.sln -c Release --no-restore
-dotnet test .\SASD.Bewerbungsmanager.sln -c Release --no-build
+powershell -ExecutionPolicy Bypass -File .\scripts\Verify-Tests.ps1
 ```
 
 ## Starten
@@ -152,6 +152,7 @@ Aktuelle Migrationen:
 202608260002_OperationalMvp
 202608270003_CommunicationIntegration
 202608270004_JobSearchAdapters
+202608270005_AssistantWorkspace
 ```
 
 Beim Start wird die neue JobLead-Tabelle automatisch über EF Core migriert. Bestehende Daten bleiben erhalten.

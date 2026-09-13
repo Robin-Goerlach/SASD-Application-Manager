@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased – v0.5.1 stabilization
+
+- Fixed the GitHub Actions test command, which previously passed the unsupported `--solution`
+  switch to MSBuild and therefore executed no tests.
+- Added `scripts/Verify-Tests.ps1`, which runs every test project separately and rejects missing,
+  empty, or failed TRX results.
+- Replaced the obsolete M0 database migration test with coverage for the complete productive
+  `ApplicationTrackerDbContext` migration chain through `202608270005_AssistantWorkspace`.
+- Removed the isolated pre-Milestone-1 DbContext, metadata migration, data-path implementation,
+  dependency-registration path, and unused WinForms shell.
+- Added a checkpoint-oriented implementation plan for v0.5.1 and v0.6.0.
+
 ## v0.5.0 – Optional assistance workspace
 
 - Added a local, provider-neutral assistant workspace with persisted, reviewable prompt/response sessions.

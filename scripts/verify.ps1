@@ -11,6 +11,6 @@ Write-Host '==> Release build'
 dotnet build $solution -c Release --no-restore
 
 Write-Host '==> Tests'
-dotnet test $solution -c Release --no-build
+& (Join-Path $PSScriptRoot 'Verify-Tests.ps1') -Configuration Release
 
 Write-Host 'Verification completed successfully.'

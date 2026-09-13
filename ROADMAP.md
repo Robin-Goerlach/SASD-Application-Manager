@@ -11,6 +11,12 @@
 
 Diese Roadmap beschreibt **Ergebnisstände**, keine Kalenderzusagen. Die tatsächliche Dauer hängt von verfügbarer Entwicklungszeit, offenen ADRs, Testaufwand und Erkenntnissen während der Implementierung ab. Scope wird reduziert, bevor Datenintegrität, Wiederherstellbarkeit oder Security-Gates abgeschwächt werden.
 
+Der historische M0-bis-M5-Plan wird im Rahmen der Dokumentationskonsolidierung an die inzwischen
+implementierte 0.x-Produktlinie angepasst. Bis dahin beschreibt
+[`docs/IMPLEMENTATION-PLAN-v0.5.1-v0.6.0.md`](docs/IMPLEMENTATION-PLAN-v0.5.1-v0.6.0.md) die
+verbindliche, checkpoint-fähige Arbeitsfolge für Stabilisierung und Authenticated Search Workflow.
+Die Verlinkung erklärt noch keinen der dort genannten offenen Schritte für abgeschlossen.
+
 ## 2. Aktuelles Produktziel
 
 **Version 1.0 soll eine vollständig lokal nutzbare Bewerbungsakte bereitstellen, mit der ein Anwender jederzeit beantworten kann:**
