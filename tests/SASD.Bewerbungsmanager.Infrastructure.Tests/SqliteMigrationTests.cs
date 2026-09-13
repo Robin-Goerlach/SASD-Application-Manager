@@ -73,7 +73,9 @@ public sealed class SqliteMigrationTests
         await using var command = connection.CreateCommand();
         command.CommandText =
             "SELECT name FROM sqlite_master " +
-            "WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name <> '__EFMigrationsHistory' " +
+            // EF Core owns its migration history and lock tables. They are deliberately
+            // excluded here because this assertion verifies the application's schema.
+            "WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '__EFMigrations%' " +
             "ORDER BY name;";
 
         var tables = new List<string>();
